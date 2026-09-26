@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "travel-growth-toolkit",
+  "version": "1.0.0",
+  "description": "Conventions, skills, and tools for building event-driven travel pricing and international growth advisory features: explainable rule-based pricing, market opportunity scoring, and offline-first data.",
+  "author": {
+    "name": "Luca Marzola"
+  },
+  "keywords": [
+    "travel",
+    "pricing",
+    "revenue-management",
+    "growth",
+    "advertising",
+    "property-based-testing"
+  ],
+  "skills": [
+    "skills/setup/SKILL.md"
+  ],
+  "mcp": "mcp.json"
+}

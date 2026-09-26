@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Type-check frontend on save",
+      "trigger": "PostFileSave",
+      "description": "Type-checks the frontend with the TypeScript compiler whenever a frontend source file is saved, catching type errors before build.",
+      "matcher": "frontend[\\\\/]src[\\\\/].*\\.(ts|tsx)$",
+      "action": {
+        "type": "command",
+        "command": "cd frontend && npx tsc --noEmit",
+        "timeout": 120
+      }
+    }
+  ]
+}

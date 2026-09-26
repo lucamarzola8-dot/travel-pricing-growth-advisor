@@ -59,7 +59,39 @@ travel-pricing-growth-advisor/
   .kiro/        Kiro steering, specs, hooks, agents
 ```
 
+## Kiro feature coverage
+
+This project demonstrates the Kiro University Challenge lessons. Full map in
+[`docs/kiro-features.md`](docs/kiro-features.md):
+
+- **Spec-driven development** — `.kiro/specs/` (EARS requirements, design, tasks)
+- **Steering** — `.kiro/steering/` (product, tech, structure conventions)
+- **Hooks** — `.kiro/hooks/` (tests on backend save, type-check on frontend save, `cdk synth` on infra save)
+- **Property-based testing** — `backend/tests/properties/` (pricing P1–P5, growth G1–G5)
+- **MCP** — `.kiro/settings/mcp.json` (optional event-enrichment `fetch` server, off by default)
+- **Custom agents** — `.kiro/agents/` (`travel-data-analyst`, `aws-infra-reviewer`)
+- **Power** — `power/` (`travel-growth-toolkit`: skill + MCP, packaged for reuse)
+
+## Running it
+
+```
+# Backend API (from backend/)
+python -m venv .venv && .venv/Scripts/pip install holidays pytest hypothesis
+$env:PYTHONPATH="src"; .venv/Scripts/python -m travel_advisor.server   # http://127.0.0.1:8000
+
+# Tests (from backend/)
+.venv/Scripts/python -m pytest -q
+
+# Infrastructure validation (from infra/)
+npm install && npm run synth
+
+# Dashboard (from frontend/)
+npm install && npm run dev                                             # http://localhost:5173
+```
+
 ## Status
 
-Work in progress — see `.kiro/specs/travel-pricing-growth-advisor/` for requirements,
-design, and the implementation task list.
+Core product complete: backend + tests, property-based tests, API, CDK infra
+(validated with `cdk synth`), and the dashboard all work. Remaining: presentation
+polish (screenshots, richer datasets, frontend styling) and optional live AWS deploy.
+See `.kiro/specs/travel-pricing-growth-advisor/tasks.md` for the task list.

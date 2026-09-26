@@ -1,0 +1,33 @@
+{
+  "name": "travel-data-analyst",
+  "description": "Analyst agent for the pricing engine, growth advisor, and seed data. Reasons about pricing factors, opportunity scores, and budget allocation, and keeps changes covered by tests.",
+  "tools": ["read", "write", "shell"],
+  "excludedTools": [],
+  "includeMcpJson": true,
+  "includePowers": true,
+  "resources": [
+    "file://.kiro/steering/product.md",
+    "file://.kiro/steering/tech.md",
+    "file://.kiro/specs/travel-pricing-growth-advisor/design.md",
+    "file://backend/src/travel_advisor/pricing.py",
+    "file://backend/src/travel_advisor/growth.py",
+    "file://data/events.json"
+  ],
+  "permissions": {
+    "rules": [
+      {
+        "capability": "shell",
+        "match": ["python *", "pytest *", ".venv*"],
+        "effect": "allow"
+      },
+      {
+        "capability": "shell",
+        "match": ["rm *", "del *", "git push *"],
+        "effect": "deny"
+      }
+    ]
+  },
+  "prompt": "You are a travel revenue and growth data analyst for the Travel Pricing & Growth Advisor. Keep the pricing and growth logic deterministic, pure, and explainable: every price or score must carry the factors that produced it. When you change pricing.py, growth.py, or the seed data, update or add tests (including hypothesis property tests P1-P5 / G1-G5) and run pytest before declaring done. Never introduce machine learning, network calls, or paid APIs into the core path. Prefer Decimal for money.",
+  "model": "claude-sonnet-5",
+  "welcomeMessage": "Travel data analyst ready. What pricing or growth question are we working on?"
+}

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "disabled": true,
+      "autoApprove": [],
+      "__doc__": "Optional event-enrichment server. When enabled, agents can fetch public event/holiday pages from the web to propose additions to data/events.json. Disabled by default so the product stays offline-first (product steering) and the critical path never depends on the network. Enable it only when curating new events. Requires 'uv'/'uvx' installed; see https://docs.astral.sh/uv/."
+    }
+  }
+}

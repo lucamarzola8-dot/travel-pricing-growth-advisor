@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Validate CDK on stack save",
+      "trigger": "PostFileSave",
+      "description": "Runs cdk synth to validate the infrastructure whenever the CDK stack or app entrypoint is saved, ensuring the template stays synthesizable.",
+      "matcher": "infra[\\\\/](lib|bin)[\\\\/].*\\.ts$",
+      "action": {
+        "type": "command",
+        "command": "cd infra && npm run synth",
+        "timeout": 180
+      }
+    }
+  ]
+}

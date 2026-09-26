@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "disabled": true,
+      "__doc__": "Optional event-enrichment server bundled with the power. Enable only when curating events for data/events.json; the pricing critical path stays offline-first. Requires 'uv'/'uvx' (https://docs.astral.sh/uv/)."
+    }
+  }
+}
