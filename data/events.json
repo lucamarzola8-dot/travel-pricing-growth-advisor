@@ -1,0 +1,62 @@
+[
+  {
+    "market_code": "BCN",
+    "date": "2026-03-02",
+    "name": "Mobile World Congress",
+    "impact": 0.35
+  },
+  {
+    "market_code": "BCN",
+    "date": "2026-06-19",
+    "name": "Sonar Music Festival",
+    "impact": 0.18
+  },
+  {
+    "market_code": "CDG",
+    "date": "2026-09-28",
+    "name": "Paris Fashion Week",
+    "impact": 0.28
+  },
+  {
+    "market_code": "CDG",
+    "date": "2026-05-25",
+    "name": "Roland Garros Finals",
+    "impact": 0.22
+  },
+  {
+    "market_code": "BER",
+    "date": "2026-02-12",
+    "name": "Berlinale Film Festival",
+    "impact": 0.20
+  },
+  {
+    "market_code": "BER",
+    "date": "2026-09-05",
+    "name": "IFA Tech Show",
+    "impact": 0.24
+  },
+  {
+    "market_code": "AMS",
+    "date": "2026-04-27",
+    "name": "King's Day",
+    "impact": 0.30
+  },
+  {
+    "market_code": "AMS",
+    "date": "2026-10-21",
+    "name": "Amsterdam Dance Event",
+    "impact": 0.19
+  },
+  {
+    "market_code": "LHR",
+    "date": "2026-07-03",
+    "name": "Wimbledon Finals Weekend",
+    "impact": 0.26
+  },
+  {
+    "market_code": "LHR",
+    "date": "2026-11-30",
+    "name": "Winter Retail Peak",
+    "impact": 0.12
+  }
+]

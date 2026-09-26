@@ -1,0 +1,47 @@
+[
+  {
+    "code": "MXP-BCN",
+    "origin": "MXP",
+    "destination_market": "BCN",
+    "destination_country": "ES",
+    "base_fare": "120.00",
+    "floor": "69.00",
+    "ceiling": "320.00"
+  },
+  {
+    "code": "MXP-CDG",
+    "origin": "MXP",
+    "destination_market": "CDG",
+    "destination_country": "FR",
+    "base_fare": "140.00",
+    "floor": "79.00",
+    "ceiling": "360.00"
+  },
+  {
+    "code": "MXP-BER",
+    "origin": "MXP",
+    "destination_market": "BER",
+    "destination_country": "DE",
+    "base_fare": "150.00",
+    "floor": "85.00",
+    "ceiling": "380.00"
+  },
+  {
+    "code": "MXP-AMS",
+    "origin": "MXP",
+    "destination_market": "AMS",
+    "destination_country": "NL",
+    "base_fare": "135.00",
+    "floor": "80.00",
+    "ceiling": "350.00"
+  },
+  {
+    "code": "MXP-LHR",
+    "origin": "MXP",
+    "destination_market": "LHR",
+    "destination_country": "GB",
+    "base_fare": "160.00",
+    "floor": "95.00",
+    "ceiling": "420.00"
+  }
+]

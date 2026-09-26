@@ -1,0 +1,28 @@
+[project]
+name = "travel-advisor"
+version = "0.1.0"
+description = "Event-driven dynamic pricing and international growth advisor for the travel vertical"
+requires-python = ">=3.12"
+dependencies = [
+    "holidays>=0.57",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "hypothesis>=6.100",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.hypothesis]
+max_examples = 200
