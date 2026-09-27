@@ -26,10 +26,15 @@ const FALLBACK_ROUTES: RouteInfo[] = [
 
 type Tab = "pricing" | "growth";
 
+/** Today's date as YYYY-MM-DD, so the calendar starts from now by default. */
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export function App() {
   const [routes, setRoutes] = useState<RouteInfo[]>(FALLBACK_ROUTES);
   const [route, setRoute] = useState(FALLBACK_ROUTES[0].code);
-  const [start, setStart] = useState("2026-03-01");
+  const [start, setStart] = useState(todayIso());
   const [days, setDays] = useState(14);
   const [budget, setBudget] = useState(100000);
   const [tab, setTab] = useState<Tab>("pricing");

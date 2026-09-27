@@ -11,26 +11,39 @@ business language a decision-maker can act on.
 > development, steering, hooks, property-based testing, MCP, custom agents, and a packaged
 > Kiro Power — around a real product, not a toy.
 
-## The business problem
+## What it does
 
-Airlines and travel companies routinely leave revenue on the table because pricing and
-market-investment decisions are made with static rules, spreadsheets, and intuition. This
-platform answers four questions they actually ask:
+The platform combines two tools travel businesses need side by side:
 
-1. **What price should this route sell at, on this date?** — a dynamic fare from
-   seasonality, local holidays, and nearby events (the **Flight Pricing** tab).
-2. **Am I blind to incoming demand?** — it surfaces demand spikes tied to events/holidays
-   *before* they happen (e.g. Barcelona during Mobile World Congress).
-3. **Where should I spend my Google Ads budget?** — markets are ranked by **ROI of ad
-   spend** (search demand × margin ÷ cost-per-click), and the budget is split accordingly
-   (the **Ads Growth Allocation** tab). This is the international-growth-consultant view.
-4. **How do I explain this to a client?** — it generates a "storyline" and a shareable
-   one-pager: the key insights in plain business language.
+1. **Dynamic flight pricing** — recommends a fare per route and date that reacts to
+   **seasonality, national holidays, and public events** (trade fairs, concerts, sporting
+   events). Every price comes with the factors behind it, so a demand spike (e.g. Barcelona
+   during Mobile World Congress) is visible before it happens (the **Flight Pricing** tab).
+2. **Google Ads allocation advisory** — recommends **where to spend a Google Ads budget**
+   across markets, ranked by **return on ad spend** (see below). It answers the
+   international-growth-consultant question: given a fixed ad budget, which destinations
+   return the most per euro spent? (the **Ads Growth Allocation** tab).
+
+The two are linked: the holidays and events that lift a route's fares also boost that
+market in the ads allocation, so a spike you see in pricing pushes that market up the ad
+ranking. Both outputs are explained in plain business language and can be exported as a
+one-pager.
+
+**How the ROI is computed.** For each market:
+
+```
+ROI score = search demand × (1 + booking margin) ÷ cost-per-click
+```
+
+A euro of ad spend returns more where search demand is high, the booking margin is good,
+and the cost-per-click is low. So a very popular but expensive market (e.g. London, high
+CPC) can rank below a cheaper, high-margin one (e.g. Lisbon) — the budget follows ROI, not
+raw popularity.
 
 **Who uses it:** commercial and revenue teams at airlines, and growth teams at OTAs
-(Booking, Expedia, eDreams) that spend heavily on Google Ads across many markets. It is a
-B2B decision-support tool, not a consumer booking app — the traveller only ever sees the
-resulting price.
+(Booking, Expedia, eDreams) that run Google Ads across many markets. It is a B2B
+decision-support tool, not a consumer booking app — the traveller only sees the resulting
+price.
 
 ## The client one-pager
 
