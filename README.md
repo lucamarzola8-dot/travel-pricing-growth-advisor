@@ -70,6 +70,20 @@ byte-identical report.
 holiday **and** the St. Patrick's Day Festival), with the Google Ads budget split across
 markets by ROI and the reasoning written out in the storyline.*
 
+## The dashboard
+
+**Flight Pricing tab** — the recommended fare per day for a route, coloured by uplift, with
+the factors behind each day on hover.
+
+![Flight Pricing tab](docs/screenshot-pricing.png)
+
+**Ads Growth Allocation tab** — markets ranked by return on ad spend, each expandable to show
+where its Google Ads budget goes (Search / Performance Max / YouTube + example keywords), plus
+the client storyline. Here the analysed route's market (London ★) sits low despite the highest
+demand, because its cost-per-click is the highest — the budget follows ROI, not popularity.
+
+![Ads Growth Allocation tab](docs/screenshot-ads-growth.png)
+
 ## What's inside
 
 - **Interactive dashboard** (React + Vite) — a city-name route selector (12 EMEA routes), a

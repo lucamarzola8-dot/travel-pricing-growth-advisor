@@ -26,3 +26,7 @@ cdk.out/
 .DS_Store
 Thumbs.db
 *.log
+
+# Personal career collateral — keep out of the public repo
+docs/linkedin-post.md
+docs/cv-line.md

@@ -67,6 +67,12 @@ Each market's allocation is broken down by channel (Search / Performance Max / Y
 shown with example keywords and their CPC, so "allocate €X to Lisbon" becomes concrete: how
 much on each channel and which search terms it targets.
 
+![Ads Growth Allocation tab](screenshot-ads-growth.png)
+
+*The Ads Growth Allocation tab: markets ranked by ROI, London (★, the analysed route's
+market) expanded to show its channel split and keywords. Despite the highest demand, London
+ranks low because its CPC is the highest — budget follows ROI, not popularity.*
+
 ### 5. Pricing → allocation link
 When a route and period are analysed, the holidays and events that raise its fares also
 **demand-boost that market** in the ad allocation. A spike in the pricing calendar pushes the
