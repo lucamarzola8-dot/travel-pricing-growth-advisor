@@ -58,5 +58,59 @@
     "date": "2026-11-30",
     "name": "Winter Retail Peak",
     "impact": 0.12
+  },
+  {
+    "market_code": "FCO",
+    "date": "2026-04-21",
+    "name": "Rome Birthday & Easter Peak",
+    "impact": 0.22
+  },
+  {
+    "market_code": "FCO",
+    "date": "2026-10-04",
+    "name": "Rome Film Festival",
+    "impact": 0.16
+  },
+  {
+    "market_code": "LIS",
+    "date": "2026-06-13",
+    "name": "Festas de Lisboa",
+    "impact": 0.24
+  },
+  {
+    "market_code": "LIS",
+    "date": "2026-11-04",
+    "name": "Web Summit",
+    "impact": 0.33
+  },
+  {
+    "market_code": "VIE",
+    "date": "2026-02-12",
+    "name": "Vienna Opera Ball",
+    "impact": 0.21
+  },
+  {
+    "market_code": "PRG",
+    "date": "2026-05-12",
+    "name": "Prague Spring Music Festival",
+    "impact": 0.18
+  },
+  {
+    "market_code": "ATH",
+    "date": "2026-07-18",
+    "name": "Athens Epidaurus Festival",
+    "impact": 0.17
+  },
+  {
+    "market_code": "DUB",
+    "date": "2026-03-17",
+    "name": "St. Patrick's Day Festival",
+    "impact": 0.34
+  },
+  {
+    "market_code": "MAD",
+    "date": "2026-05-15",
+    "name": "San Isidro Festival",
+    "impact": 0.20
   }
 ]

@@ -9,6 +9,18 @@ import pytest
 from travel_advisor import api
 
 
+# --------------------------- routes -------------------------------------- #
+
+def test_get_routes_lists_labels():
+    status, body = api.get_routes({})
+    assert status == 200
+    assert len(body["routes"]) >= 5
+    first = body["routes"][0]
+    assert "code" in first and "label" in first
+    # label is human-friendly: contains the city and the code
+    assert "(" in first["label"] and ")" in first["label"]
+
+
 # --------------------------- price --------------------------------------- #
 
 def test_get_price_valid():

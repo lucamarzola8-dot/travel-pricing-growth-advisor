@@ -16,6 +16,7 @@ from urllib.parse import parse_qs, urlparse
 from . import api
 
 _ROUTES = {
+    "/routes": api.get_routes,
     "/price": api.get_price,
     "/growth": api.get_growth,
     "/storyline": api.get_storyline,

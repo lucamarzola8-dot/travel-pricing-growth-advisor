@@ -46,6 +46,8 @@ def load_routes(data_dir: str | Path | None = None) -> dict[str, Route]:
                 base_fare=Decimal(str(rec["base_fare"])),
                 floor=Decimal(str(rec["floor"])),
                 ceiling=Decimal(str(rec["ceiling"])),
+                origin_city=rec.get("origin_city", ""),
+                destination_city=rec.get("destination_city", ""),
             )
         except (KeyError, ValueError, InvalidOperation, TypeError):
             # Skip malformed route records; keep loading the rest.

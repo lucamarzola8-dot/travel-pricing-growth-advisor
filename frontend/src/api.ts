@@ -2,6 +2,7 @@ import type {
   GrowthResponse,
   PriceResponse,
   PricedDay,
+  RoutesResponse,
   StorylineResponse,
 } from "./types";
 
@@ -21,6 +22,10 @@ async function getJson<T>(path: string): Promise<T> {
     throw new Error(message);
   }
   return (await res.json()) as T;
+}
+
+export function fetchRoutes(): Promise<RoutesResponse> {
+  return getJson<RoutesResponse>("/routes");
 }
 
 export function fetchPrice(route: string, date: string): Promise<PriceResponse> {

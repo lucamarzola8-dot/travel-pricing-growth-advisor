@@ -36,6 +36,8 @@ class Route:
     base_fare: Decimal
     floor: Decimal
     ceiling: Decimal
+    origin_city: str = ""
+    destination_city: str = ""
 
     def __post_init__(self) -> None:
         if self.floor > self.ceiling:

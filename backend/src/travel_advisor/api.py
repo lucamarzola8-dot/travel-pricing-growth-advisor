@@ -83,6 +83,31 @@ def _price_result_for(route_code: str, travel_date: date, data_dir=None) -> Pric
     return price_for(route, travel_date, holiday=holiday, events=events)
 
 
+def get_routes(_params: dict[str, Any] | None = None, data_dir=None) -> tuple[int, dict[str, Any]]:
+    """GET /routes -> available routes with human-friendly city labels.
+
+    Lets the client show "Milan -> Barcelona (MXP-BCN)" instead of raw airport
+    codes, so a user does not need to know airport codes by heart.
+    """
+    routes = data.load_routes(data_dir)
+    items = []
+    for r in sorted(routes.values(), key=lambda x: (x.destination_city or x.destination_market)):
+        origin = r.origin_city or r.origin
+        dest = r.destination_city or r.destination_market
+        items.append(
+            {
+                "code": r.code,
+                "origin": r.origin,
+                "originCity": r.origin_city,
+                "destinationMarket": r.destination_market,
+                "destinationCity": r.destination_city,
+                "destinationCountry": r.destination_country,
+                "label": f"{origin} \u2192 {dest} ({r.code})",
+            }
+        )
+    return 200, {"routes": items}
+
+
 def get_price(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, Any]]:
     """GET /price?route=&date= -> price result (req 5.1 / 5.2)."""
     route_code = _require(params, "route")
@@ -160,6 +185,10 @@ def _run(handler, event: dict[str, Any]) -> dict[str, Any]:
         },
         "body": json.dumps(body),
     }
+
+
+def lambda_routes(event, context=None):  # noqa: ANN001
+    return _run(get_routes, event)
 
 
 def lambda_price(event, context=None):  # noqa: ANN001

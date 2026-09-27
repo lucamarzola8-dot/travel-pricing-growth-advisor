@@ -2,7 +2,9 @@
   {
     "code": "MXP-BCN",
     "origin": "MXP",
+    "origin_city": "Milan",
     "destination_market": "BCN",
+    "destination_city": "Barcelona",
     "destination_country": "ES",
     "base_fare": "120.00",
     "floor": "69.00",
@@ -11,7 +13,9 @@
   {
     "code": "MXP-CDG",
     "origin": "MXP",
+    "origin_city": "Milan",
     "destination_market": "CDG",
+    "destination_city": "Paris",
     "destination_country": "FR",
     "base_fare": "140.00",
     "floor": "79.00",
@@ -20,7 +24,9 @@
   {
     "code": "MXP-BER",
     "origin": "MXP",
+    "origin_city": "Milan",
     "destination_market": "BER",
+    "destination_city": "Berlin",
     "destination_country": "DE",
     "base_fare": "150.00",
     "floor": "85.00",
@@ -29,7 +35,9 @@
   {
     "code": "MXP-AMS",
     "origin": "MXP",
+    "origin_city": "Milan",
     "destination_market": "AMS",
+    "destination_city": "Amsterdam",
     "destination_country": "NL",
     "base_fare": "135.00",
     "floor": "80.00",
@@ -38,10 +46,89 @@
   {
     "code": "MXP-LHR",
     "origin": "MXP",
+    "origin_city": "Milan",
     "destination_market": "LHR",
+    "destination_city": "London",
     "destination_country": "GB",
     "base_fare": "160.00",
     "floor": "95.00",
     "ceiling": "420.00"
+  },
+  {
+    "code": "MXP-FCO",
+    "origin": "MXP",
+    "origin_city": "Milan",
+    "destination_market": "FCO",
+    "destination_city": "Rome",
+    "destination_country": "IT",
+    "base_fare": "90.00",
+    "floor": "49.00",
+    "ceiling": "240.00"
+  },
+  {
+    "code": "MXP-LIS",
+    "origin": "MXP",
+    "origin_city": "Milan",
+    "destination_market": "LIS",
+    "destination_city": "Lisbon",
+    "destination_country": "PT",
+    "base_fare": "155.00",
+    "floor": "89.00",
+    "ceiling": "390.00"
+  },
+  {
+    "code": "MXP-VIE",
+    "origin": "MXP",
+    "origin_city": "Milan",
+    "destination_market": "VIE",
+    "destination_city": "Vienna",
+    "destination_country": "AT",
+    "base_fare": "130.00",
+    "floor": "75.00",
+    "ceiling": "330.00"
+  },
+  {
+    "code": "MXP-PRG",
+    "origin": "MXP",
+    "origin_city": "Milan",
+    "destination_market": "PRG",
+    "destination_city": "Prague",
+    "destination_country": "CZ",
+    "base_fare": "125.00",
+    "floor": "72.00",
+    "ceiling": "320.00"
+  },
+  {
+    "code": "MXP-ATH",
+    "origin": "MXP",
+    "origin_city": "Milan",
+    "destination_market": "ATH",
+    "destination_city": "Athens",
+    "destination_country": "GR",
+    "base_fare": "170.00",
+    "floor": "99.00",
+    "ceiling": "430.00"
+  },
+  {
+    "code": "MXP-DUB",
+    "origin": "MXP",
+    "origin_city": "Milan",
+    "destination_market": "DUB",
+    "destination_city": "Dublin",
+    "destination_country": "IE",
+    "base_fare": "165.00",
+    "floor": "95.00",
+    "ceiling": "410.00"
+  },
+  {
+    "code": "MXP-MAD",
+    "origin": "MXP",
+    "origin_city": "Milan",
+    "destination_market": "MAD",
+    "destination_city": "Madrid",
+    "destination_country": "ES",
+    "base_fare": "128.00",
+    "floor": "74.00",
+    "ceiling": "340.00"
   }
 ]

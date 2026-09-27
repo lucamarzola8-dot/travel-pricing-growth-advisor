@@ -33,6 +33,20 @@ export interface StorylineResponse {
   storyline: string[];
 }
 
+export interface RouteInfo {
+  code: string;
+  origin: string;
+  originCity: string;
+  destinationMarket: string;
+  destinationCity: string;
+  destinationCountry: string;
+  label: string;
+}
+
+export interface RoutesResponse {
+  routes: RouteInfo[];
+}
+
 /** A single day on the pricing calendar. */
 export interface PricedDay {
   date: string;
