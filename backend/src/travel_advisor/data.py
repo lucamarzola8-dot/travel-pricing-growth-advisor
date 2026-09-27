@@ -11,16 +11,17 @@ from __future__ import annotations
 
 import json
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_DOWN, Decimal, InvalidOperation
 from pathlib import Path
 
 import holidays
 
-from .models import Event, MarketAdData, PricingRules, Route
+from .models import AdChannel, AdKeyword, Event, MarketAdData, PricingRules, Route
 
 # Repo root is three parents up from this file: src/travel_advisor/data.py -> backend -> repo
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_DATA_DIR = _REPO_ROOT / "data"
+_CENTS = Decimal("0.01")
 
 
 class UnknownRouteError(KeyError):
@@ -101,6 +102,82 @@ def load_markets(data_dir: str | Path | None = None) -> dict[str, MarketAdData]:
             continue
         markets[m.code] = m
     return markets
+
+
+def load_ad_channels(
+    data_dir: str | Path | None = None,
+) -> tuple[list[AdChannel], dict[str, dict]]:
+    """Load the default channel split and per-market channel/keyword overrides.
+
+    Returns (default_channels, markets) where markets maps a market code to its
+    optional ``channels`` and ``keywords``. Missing file yields sane defaults so
+    callers always have a split.
+    """
+    default = [
+        AdChannel("Search", 0.55),
+        AdChannel("Performance Max", 0.30),
+        AdChannel("YouTube", 0.15),
+    ]
+    path = _data_dir(data_dir) / "ad-channels.json"
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return default, {}
+    try:
+        dc = [
+            AdChannel(str(c["channel"]), float(c["weight"]))
+            for c in raw.get("default_channels", [])
+        ] or default
+    except (KeyError, ValueError, TypeError):
+        dc = default
+    return dc, raw.get("markets", {})
+
+
+def ad_breakdown(
+    market_code: str, amount: Decimal, data_dir: str | Path | None = None
+) -> tuple[list[tuple[AdChannel, Decimal]], list[AdKeyword]]:
+    """Split a market's allocated ``amount`` across channels and list keywords.
+
+    Channel amounts are proportional to the channel weights and sum to ``amount``
+    within rounding (the remainder goes to the first channel). Deterministic.
+    """
+    default_channels, markets = load_ad_channels(data_dir)
+    entry = markets.get(market_code, {})
+
+    channels = default_channels
+    if entry.get("channels"):
+        try:
+            channels = [
+                AdChannel(str(c["channel"]), float(c["weight"]))
+                for c in entry["channels"]
+            ]
+        except (KeyError, ValueError, TypeError):
+            channels = default_channels
+
+    weight_sum = sum(c.weight for c in channels) or 1.0
+    amount = amount.quantize(_CENTS)
+    split: list[tuple[AdChannel, Decimal]] = []
+    allocated = Decimal("0.00")
+    for c in channels:
+        share = (amount * Decimal(str(c.weight)) / Decimal(str(weight_sum))).quantize(
+            _CENTS, rounding=ROUND_DOWN
+        )
+        split.append((c, share))
+        allocated += share
+    # Put the rounding remainder on the first channel so the split sums exactly.
+    if split:
+        remainder = amount - allocated
+        first_channel, first_amount = split[0]
+        split[0] = (first_channel, first_amount + remainder)
+
+    keywords: list[AdKeyword] = []
+    for kw in entry.get("keywords", []):
+        try:
+            keywords.append(AdKeyword(str(kw["term"]), float(kw["cpc_eur"])))
+        except (KeyError, ValueError, TypeError):
+            continue
+
+    return split, keywords
 
 
 def load_pricing_rules(data_dir: str | Path | None = None) -> PricingRules:

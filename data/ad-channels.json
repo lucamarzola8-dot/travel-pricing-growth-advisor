@@ -1,0 +1,99 @@
+{
+  "description": "How a market's allocated Google Ads budget is split across channels, plus example keywords with their cost-per-click. Channel weights per market sum to ~1.0. This makes 'allocate X to market Y' concrete: it shows the campaigns and search terms the spend goes to. Seed values; in production these come from the Google Ads API / Keyword Planner.",
+  "default_channels": [
+    { "channel": "Search", "weight": 0.55 },
+    { "channel": "Performance Max", "weight": 0.30 },
+    { "channel": "YouTube", "weight": 0.15 }
+  ],
+  "markets": {
+    "BCN": {
+      "keywords": [
+        { "term": "flights to Barcelona", "cpc_eur": 0.80 },
+        { "term": "Barcelona city break", "cpc_eur": 0.72 },
+        { "term": "hotels Barcelona", "cpc_eur": 0.95 }
+      ]
+    },
+    "CDG": {
+      "keywords": [
+        { "term": "flights to Paris", "cpc_eur": 0.95 },
+        { "term": "Paris weekend", "cpc_eur": 0.88 },
+        { "term": "hotels Paris", "cpc_eur": 1.10 }
+      ]
+    },
+    "LHR": {
+      "channels": [
+        { "channel": "Search", "weight": 0.60 },
+        { "channel": "Performance Max", "weight": 0.28 },
+        { "channel": "YouTube", "weight": 0.12 }
+      ],
+      "keywords": [
+        { "term": "flights to London", "cpc_eur": 1.10 },
+        { "term": "London city break", "cpc_eur": 1.25 },
+        { "term": "cheap London flights", "cpc_eur": 0.98 }
+      ]
+    },
+    "LIS": {
+      "keywords": [
+        { "term": "flights to Lisbon", "cpc_eur": 0.65 },
+        { "term": "Lisbon holidays", "cpc_eur": 0.60 },
+        { "term": "Web Summit hotels", "cpc_eur": 0.90 }
+      ]
+    },
+    "ATH": {
+      "keywords": [
+        { "term": "flights to Athens", "cpc_eur": 0.62 },
+        { "term": "Greece city break", "cpc_eur": 0.58 },
+        { "term": "Athens hotels", "cpc_eur": 0.70 }
+      ]
+    },
+    "FCO": {
+      "keywords": [
+        { "term": "flights to Rome", "cpc_eur": 0.70 },
+        { "term": "Rome weekend", "cpc_eur": 0.66 },
+        { "term": "hotels Rome", "cpc_eur": 0.82 }
+      ]
+    },
+    "AMS": {
+      "keywords": [
+        { "term": "flights to Amsterdam", "cpc_eur": 0.90 },
+        { "term": "Amsterdam city break", "cpc_eur": 0.85 },
+        { "term": "Amsterdam Dance Event", "cpc_eur": 1.05 }
+      ]
+    },
+    "BER": {
+      "keywords": [
+        { "term": "flights to Berlin", "cpc_eur": 0.85 },
+        { "term": "Berlin weekend", "cpc_eur": 0.78 },
+        { "term": "hotels Berlin", "cpc_eur": 0.92 }
+      ]
+    },
+    "MAD": {
+      "keywords": [
+        { "term": "flights to Madrid", "cpc_eur": 0.72 },
+        { "term": "Madrid city break", "cpc_eur": 0.68 },
+        { "term": "hotels Madrid", "cpc_eur": 0.80 }
+      ]
+    },
+    "VIE": {
+      "keywords": [
+        { "term": "flights to Vienna", "cpc_eur": 0.78 },
+        { "term": "Vienna Christmas markets", "cpc_eur": 0.70 },
+        { "term": "hotels Vienna", "cpc_eur": 0.84 }
+      ]
+    },
+    "PRG": {
+      "keywords": [
+        { "term": "flights to Prague", "cpc_eur": 0.58 },
+        { "term": "Prague weekend", "cpc_eur": 0.54 },
+        { "term": "hotels Prague", "cpc_eur": 0.66 }
+      ]
+    },
+    "DUB": {
+      "keywords": [
+        { "term": "flights to Dublin", "cpc_eur": 0.88 },
+        { "term": "Dublin city break", "cpc_eur": 0.82 },
+        { "term": "St Patrick's Day Dublin", "cpc_eur": 1.15 }
+      ]
+    }
+  }
+}

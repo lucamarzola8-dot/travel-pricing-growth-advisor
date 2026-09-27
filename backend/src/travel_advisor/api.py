@@ -237,6 +237,22 @@ def get_growth(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, An
             for m in ranked
         ],
         "allocations": [_allocation_to_dict(a) for a in allocations],
+        "breakdowns": [_ad_breakdown_dict(a, data_dir) for a in allocations],
+    }
+
+
+def _ad_breakdown_dict(a: Allocation, data_dir=None) -> dict[str, Any]:
+    """Where a market's allocated ad budget goes: channels + example keywords."""
+    split, keywords = data.ad_breakdown(a.market, a.amount, data_dir)
+    return {
+        "market": a.market,
+        "amount": str(a.amount),
+        "channels": [
+            {"channel": ch.channel, "amount": str(amt)} for ch, amt in split
+        ],
+        "keywords": [
+            {"term": kw.term, "cpcEur": round(kw.cpc_eur, 2)} for kw in keywords
+        ],
     }
 
 

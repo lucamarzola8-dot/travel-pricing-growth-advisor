@@ -113,6 +113,11 @@ events that raise its fares also **demand-boost that market** in the ads allocat
 St. Patrick's Day) pushes that market up the ads ranking — one coherent signal → price →
 ad-ROI story.
 
+**Where the ad budget goes.** Each market's allocation is broken down by channel
+(Search / Performance Max / YouTube) and shown with example keywords and their CPC
+(`data/ad-channels.json`), so "allocate €X to Lisbon" becomes concrete: how much on each
+channel and which search terms it targets. Click a market in the dashboard to expand it.
+
 **The one-pager** is not hand-drawn: it is rendered by code (`onepager.py`) from the same
 engine outputs (the computed daily prices, the allocations, the storyline), and is
 deterministic — identical inputs produce a byte-identical SVG.

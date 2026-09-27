@@ -166,3 +166,19 @@ class Allocation:
 
     market: str
     amount: Decimal
+
+
+@dataclass(frozen=True)
+class AdChannel:
+    """A Google Ads channel and the share of a market's budget it takes."""
+
+    channel: str  # "Search" | "Performance Max" | "YouTube"
+    weight: float
+
+
+@dataclass(frozen=True)
+class AdKeyword:
+    """An example search term the ad spend targets, with its cost-per-click."""
+
+    term: str
+    cpc_eur: float

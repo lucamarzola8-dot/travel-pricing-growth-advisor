@@ -60,6 +60,19 @@ def test_get_growth_valid():
     assert scores == sorted(scores, reverse=True)
 
 
+def test_get_growth_includes_ad_breakdown_summing_to_allocation():
+    from decimal import Decimal
+
+    status, body = api.get_growth({"budget": "100000"})
+    assert status == 200
+    assert body["breakdowns"]
+    by_market_alloc = {a["market"]: a["amount"] for a in body["allocations"]}
+    for bd in body["breakdowns"]:
+        channel_sum = sum(Decimal(c["amount"]) for c in bd["channels"])
+        assert channel_sum == Decimal(by_market_alloc[bd["market"]])
+        assert bd["keywords"]  # each market lists example keywords
+
+
 def test_get_growth_context_boosts_focused_market():
     """A route/date context demand-boosts that route's market's score."""
     plain = api.get_growth({"budget": "100000"})[1]

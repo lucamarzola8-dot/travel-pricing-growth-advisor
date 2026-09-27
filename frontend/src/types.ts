@@ -26,6 +26,23 @@ export interface AllocationItem {
   amount: string;
 }
 
+export interface AdChannelSplit {
+  channel: string;
+  amount: string;
+}
+
+export interface AdKeyword {
+  term: string;
+  cpcEur: number;
+}
+
+export interface AdBreakdown {
+  market: string;
+  amount: string;
+  channels: AdChannelSplit[];
+  keywords: AdKeyword[];
+}
+
 export interface GrowthResponse {
   budget: string;
   budgetKind?: string;
@@ -33,6 +50,7 @@ export interface GrowthResponse {
   focusUplift?: number;
   markets: MarketScore[];
   allocations: AllocationItem[];
+  breakdowns?: AdBreakdown[];
 }
 
 export interface StorylineResponse {

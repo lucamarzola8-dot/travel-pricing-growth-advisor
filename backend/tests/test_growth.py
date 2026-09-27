@@ -37,6 +37,15 @@ def test_load_markets_has_advertising_fields():
     assert lhr.demand_index > 0 and lhr.cpc_eur > 0 and 0 <= lhr.margin_index <= 1
 
 
+def test_ad_breakdown_channels_sum_to_amount():
+    from travel_advisor.data import ad_breakdown
+
+    split, keywords = ad_breakdown("BCN", Decimal("1000.00"))
+    assert sum(amt for _ch, amt in split) == Decimal("1000.00")
+    assert all(amt >= 0 for _ch, amt in split)
+    assert len(keywords) >= 1
+
+
 def test_demand_uplift_is_at_least_one_and_monotonic():
     from travel_advisor.growth import demand_uplift
 
