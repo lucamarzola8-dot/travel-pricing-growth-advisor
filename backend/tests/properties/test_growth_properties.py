@@ -43,15 +43,29 @@ def test_g3_higher_score_not_less(total, markets):
                 assert by_market[a.market] >= by_market[b.market]
 
 
-# G4 (req 3.1): opportunity_score is monotonic non-decreasing in demand.
+# G4 (req 3.1): opportunity_score is monotonic non-decreasing in demand, at any
+# fixed margin and cost-per-click.
 @given(
     d1=st.floats(min_value=0, max_value=1000, allow_nan=False, allow_infinity=False),
     d2=st.floats(min_value=0, max_value=1000, allow_nan=False, allow_infinity=False),
-    margin=st.floats(min_value=0, max_value=1000, allow_nan=False, allow_infinity=False),
+    margin=st.floats(min_value=0, max_value=5, allow_nan=False, allow_infinity=False),
+    cpc=st.floats(min_value=0.05, max_value=5, allow_nan=False, allow_infinity=False),
 )
-def test_g4_score_monotonic_in_demand(d1, d2, margin):
+def test_g4_score_monotonic_in_demand(d1, d2, margin, cpc):
     if d1 <= d2:
-        assert opportunity_score(d1, margin) <= opportunity_score(d2, margin)
+        assert opportunity_score(d1, margin, cpc) <= opportunity_score(d2, margin, cpc)
+
+
+# G6 (ROI): score is non-increasing as the cost-per-click rises (same demand/margin).
+@given(
+    demand=st.floats(min_value=0, max_value=1000, allow_nan=False, allow_infinity=False),
+    margin=st.floats(min_value=0, max_value=5, allow_nan=False, allow_infinity=False),
+    c1=st.floats(min_value=0.05, max_value=5, allow_nan=False, allow_infinity=False),
+    c2=st.floats(min_value=0.05, max_value=5, allow_nan=False, allow_infinity=False),
+)
+def test_g6_score_non_increasing_in_cpc(demand, margin, c1, c2):
+    if c1 <= c2:
+        assert opportunity_score(demand, margin, c1) >= opportunity_score(demand, margin, c2)
 
 
 # G5 (req 3.5): rank output is sorted by non-increasing score.

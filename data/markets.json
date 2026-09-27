@@ -1,0 +1,17 @@
+{
+  "description": "Per-market advertising signals used to allocate a Google Ads budget. demand_index is a search-demand proxy (Google Trends-like, 0-100). cpc_eur is the average cost-per-click for travel keywords in that market. margin_index (0-1) is relative booking profitability. These are offline seed values; the optional Google Trends MCP enrichment can refresh demand_index. Opportunity is ROI-of-ad-spend: high demand and margin raise it, high CPC lowers it.",
+  "markets": [
+    { "code": "LHR", "city": "London",    "demand_index": 92, "cpc_eur": 1.10, "margin_index": 0.62 },
+    { "code": "CDG", "city": "Paris",     "demand_index": 88, "cpc_eur": 0.95, "margin_index": 0.58 },
+    { "code": "BCN", "city": "Barcelona", "demand_index": 90, "cpc_eur": 0.80, "margin_index": 0.55 },
+    { "code": "AMS", "city": "Amsterdam", "demand_index": 78, "cpc_eur": 0.90, "margin_index": 0.57 },
+    { "code": "BER", "city": "Berlin",    "demand_index": 74, "cpc_eur": 0.85, "margin_index": 0.56 },
+    { "code": "FCO", "city": "Rome",      "demand_index": 85, "cpc_eur": 0.70, "margin_index": 0.52 },
+    { "code": "LIS", "city": "Lisbon",    "demand_index": 80, "cpc_eur": 0.65, "margin_index": 0.60 },
+    { "code": "MAD", "city": "Madrid",    "demand_index": 76, "cpc_eur": 0.72, "margin_index": 0.54 },
+    { "code": "VIE", "city": "Vienna",    "demand_index": 60, "cpc_eur": 0.78, "margin_index": 0.55 },
+    { "code": "PRG", "city": "Prague",    "demand_index": 63, "cpc_eur": 0.58, "margin_index": 0.53 },
+    { "code": "ATH", "city": "Athens",    "demand_index": 70, "cpc_eur": 0.62, "margin_index": 0.64 },
+    { "code": "DUB", "city": "Dublin",    "demand_index": 66, "cpc_eur": 0.88, "margin_index": 0.59 }
+  ]
+}

@@ -46,12 +46,12 @@ def growth_insights(allocations: list[Allocation]) -> list[str]:
     top = ranked[0]
     total = sum(a.amount for a in allocations)
     insights = [
-        f"Top growth market is {top.market}, receiving {top.amount} of the "
-        f"{total} budget."
+        f"Best Google Ads ROI is {top.market}: allocate {top.amount} of the "
+        f"{total} ad budget there first."
     ]
     if len(ranked) > 1:
         others = ", ".join(f"{a.market} ({a.amount})" for a in ranked[1:])
-        insights.append(f"Remaining budget is spread across: {others}.")
+        insights.append(f"Remaining ad budget is spread across: {others}.")
     return insights
 
 

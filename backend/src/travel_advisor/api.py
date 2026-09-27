@@ -121,34 +121,50 @@ def get_price(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, Any
 
 
 def _market_opportunities(data_dir=None) -> list[MarketOpportunity]:
-    """Derive per-market opportunity scores from the seed data.
+    """Derive per-market Google Ads opportunity scores from the seed data.
 
-    Demand index = number of known events in the market; margin index = a simple
-    proxy from the route base fare. Deterministic and offline.
+    Uses the advertising dataset (search-demand index, cost-per-click, and margin)
+    to compute a ROI-of-ad-spend score per market. Deterministic and offline.
+    Markets without advertising data are skipped.
     """
-    routes = data.load_routes(data_dir)
-    events = data.load_events(data_dir)
-    markets: list[MarketOpportunity] = []
-    for route in routes.values():
-        market = route.destination_market
-        demand = float(len([e for e in events if e.market_code == market]))
-        margin = float(route.base_fare) / 100.0
-        markets.append(
-            MarketOpportunity(market, growth.opportunity_score(demand, margin))
+    ad_markets = data.load_markets(data_dir)
+    opportunities: list[MarketOpportunity] = []
+    for m in ad_markets.values():
+        score = growth.opportunity_score(m.demand_index, m.margin_index, m.cpc_eur)
+        opportunities.append(
+            MarketOpportunity(
+                market=m.code,
+                score=score,
+                demand_index=m.demand_index,
+                cpc_eur=m.cpc_eur,
+                margin_index=m.margin_index,
+            )
         )
-    return markets
+    return opportunities
 
 
 def get_growth(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, Any]]:
-    """GET /growth?budget= -> ranked markets + allocations (req 5.3)."""
+    """GET /growth?budget= -> markets ranked by Google Ads ROI + budget split.
+
+    ``budget`` is the Google Ads / marketing budget to allocate across markets,
+    not a flight fare. Each market carries the drivers behind its score.
+    """
     budget = _parse_budget(_require(params, "budget"))
     markets = _market_opportunities(data_dir)
     ranked = growth.rank(markets)
     allocations = growth.allocate(budget, ranked)
     return 200, {
         "budget": str(budget),
+        "budgetKind": "google_ads",
         "markets": [
-            {"market": m.market, "score": round(m.score, 4)} for m in ranked
+            {
+                "market": m.market,
+                "score": round(m.score, 2),
+                "demandIndex": round(m.demand_index, 1),
+                "cpcEur": round(m.cpc_eur, 2),
+                "marginIndex": round(m.margin_index, 2),
+            }
+            for m in ranked
         ],
         "allocations": [_allocation_to_dict(a) for a in allocations],
     }

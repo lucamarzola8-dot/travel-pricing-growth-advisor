@@ -130,11 +130,34 @@ class PricedDay:
 
 
 @dataclass(frozen=True)
+class MarketAdData:
+    """Per-market advertising signals for Google Ads budget allocation.
+
+    ``demand_index`` is a search-demand proxy (0-100, Google Trends-like),
+    ``cpc_eur`` the average cost-per-click for travel keywords in that market,
+    and ``margin_index`` (0-1) the relative booking profitability.
+    """
+
+    code: str
+    city: str
+    demand_index: float
+    cpc_eur: float
+    margin_index: float
+
+
+@dataclass(frozen=True)
 class MarketOpportunity:
-    """A market's computed growth-opportunity score (>= 0)."""
+    """A market's computed growth-opportunity score (>= 0).
+
+    Carries the drivers behind the score so the UI can explain it: expected
+    demand, the cost-per-click, and the market's margin.
+    """
 
     market: str
     score: float
+    demand_index: float = 0.0
+    cpc_eur: float = 0.0
+    margin_index: float = 0.0
 
 
 @dataclass(frozen=True)

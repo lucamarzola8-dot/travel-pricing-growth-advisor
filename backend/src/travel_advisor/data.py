@@ -16,7 +16,7 @@ from pathlib import Path
 
 import holidays
 
-from .models import Event, PricingRules, Route
+from .models import Event, MarketAdData, PricingRules, Route
 
 # Repo root is three parents up from this file: src/travel_advisor/data.py -> backend -> repo
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -74,6 +74,33 @@ def load_events(data_dir: str | Path | None = None) -> list[Event]:
             continue
         events.append(event)
     return events
+
+
+def load_markets(data_dir: str | Path | None = None) -> dict[str, MarketAdData]:
+    """Load per-market advertising data keyed by market code.
+
+    Malformed records are skipped. Missing file yields an empty dict, so callers
+    can fall back gracefully.
+    """
+    path = _data_dir(data_dir) / "markets.json"
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return {}
+    markets: dict[str, MarketAdData] = {}
+    for rec in raw.get("markets", []):
+        try:
+            m = MarketAdData(
+                code=rec["code"],
+                city=rec.get("city", rec["code"]),
+                demand_index=float(rec["demand_index"]),
+                cpc_eur=float(rec["cpc_eur"]),
+                margin_index=float(rec["margin_index"]),
+            )
+        except (KeyError, ValueError, TypeError):
+            continue
+        markets[m.code] = m
+    return markets
 
 
 def load_pricing_rules(data_dir: str | Path | None = None) -> PricingRules:

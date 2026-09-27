@@ -17,21 +17,33 @@ from .models import Allocation, MarketOpportunity
 
 _CENTS = Decimal("0.01")
 
-# Weights for the opportunity score. Both non-negative so the score is monotonic
-# non-decreasing in each input.
-_DEMAND_WEIGHT = 1.0
-_MARGIN_WEIGHT = 0.5
+# A margin index of 0 should still leave demand contributing to the score, so the
+# margin acts as an uplift on top of a base of 1.0.
+_MARGIN_UPLIFT = 1.0
+# Guards against division by a zero / tiny cost-per-click.
+_MIN_CPC = 0.05
 
 
-def opportunity_score(expected_demand: float, margin: float) -> float:
-    """Growth-opportunity score (>= 0), monotonic non-decreasing in each input.
+def opportunity_score(
+    expected_demand: float, margin: float = 0.0, cpc_eur: float = 1.0
+) -> float:
+    """ROI-of-ad-spend opportunity score (>= 0).
 
-    ``expected_demand`` is a non-negative demand index; ``margin`` is a non-negative
-    profitability index. Higher of either never lowers the score.
+    Models the return on a euro of Google Ads spend in a market:
+
+        score = demand * (1 + margin) / cpc
+
+    - rises with search demand and with booking margin;
+    - falls as the cost-per-click rises (the same budget buys fewer clicks);
+    - is monotonic non-decreasing in demand (keeps property G4);
+    - is always >= 0.
+
+    ``cpc_eur`` defaults to 1.0 so the older two-argument call still works.
     """
     demand = max(expected_demand, 0.0)
     marg = max(margin, 0.0)
-    return _DEMAND_WEIGHT * demand + _MARGIN_WEIGHT * marg
+    cpc = max(cpc_eur, _MIN_CPC)
+    return demand * (_MARGIN_UPLIFT + marg) / cpc
 
 
 def rank(markets: list[MarketOpportunity]) -> list[MarketOpportunity]:

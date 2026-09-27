@@ -15,6 +15,28 @@ def test_opportunity_score_non_negative_and_monotonic():
     assert opportunity_score(5, 10) > opportunity_score(5, 5)
 
 
+def test_opportunity_score_roi_falls_with_higher_cpc():
+    """ROI framing: same demand/margin but a higher CPC yields a lower score."""
+    cheap = opportunity_score(80, 0.6, cpc_eur=0.60)
+    dear = opportunity_score(80, 0.6, cpc_eur=1.20)
+    assert cheap > dear
+
+
+def test_opportunity_score_rises_with_demand_and_margin_at_fixed_cpc():
+    base = opportunity_score(50, 0.5, cpc_eur=0.80)
+    assert opportunity_score(90, 0.5, cpc_eur=0.80) > base  # more demand
+    assert opportunity_score(50, 0.9, cpc_eur=0.80) > base  # more margin
+
+
+def test_load_markets_has_advertising_fields():
+    from travel_advisor.data import load_markets
+
+    markets = load_markets()
+    assert "LHR" in markets
+    lhr = markets["LHR"]
+    assert lhr.demand_index > 0 and lhr.cpc_eur > 0 and 0 <= lhr.margin_index <= 1
+
+
 def test_rank_orders_by_descending_score():
     markets = [
         MarketOpportunity("A", 1.0),
