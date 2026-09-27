@@ -18,6 +18,7 @@ export interface MarketScore {
   demandIndex: number;
   cpcEur: number;
   marginIndex: number;
+  focused: boolean;
 }
 
 export interface AllocationItem {
@@ -27,6 +28,9 @@ export interface AllocationItem {
 
 export interface GrowthResponse {
   budget: string;
+  budgetKind?: string;
+  focusMarket?: string | null;
+  focusUplift?: number;
   markets: MarketScore[];
   allocations: AllocationItem[];
 }

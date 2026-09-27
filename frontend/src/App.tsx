@@ -60,7 +60,7 @@ export function App() {
     try {
       const [range, g, s] = await Promise.all([
         fetchPriceRange(route, start, days),
-        fetchGrowth(budget),
+        fetchGrowth(budget, { route, date: start, days }),
         fetchStoryline(route, start, budget),
       ]);
       setPriced(range);

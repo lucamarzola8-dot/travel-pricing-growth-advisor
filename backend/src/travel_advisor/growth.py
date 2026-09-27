@@ -46,6 +46,22 @@ def opportunity_score(
     return demand * (_MARGIN_UPLIFT + marg) / cpc
 
 
+def demand_uplift(holiday_days: int, event_hits: int) -> float:
+    """Demand uplift factor (>= 1.0) for a market over an analysed period.
+
+    Links the pricing view to the ads view: the more holiday days and nearby
+    events fall in the analysed window for a market, the stronger the expected
+    demand, so that market becomes a better place to spend ad budget.
+
+    Each holiday day and each event hit adds a fixed, bounded boost. The factor
+    is always >= 1.0, so context can only raise a market's score, never lower it
+    (this keeps allocation monotonic and the growth properties intact).
+    """
+    hol = max(holiday_days, 0)
+    ev = max(event_hits, 0)
+    return 1.0 + 0.05 * hol + 0.08 * ev
+
+
 def rank(markets: list[MarketOpportunity]) -> list[MarketOpportunity]:
     """Return markets sorted by non-increasing score (stable) — G5."""
     return sorted(markets, key=lambda m: m.score, reverse=True)

@@ -37,6 +37,15 @@ def test_load_markets_has_advertising_fields():
     assert lhr.demand_index > 0 and lhr.cpc_eur > 0 and 0 <= lhr.margin_index <= 1
 
 
+def test_demand_uplift_is_at_least_one_and_monotonic():
+    from travel_advisor.growth import demand_uplift
+
+    assert demand_uplift(0, 0) == 1.0
+    assert demand_uplift(2, 0) > demand_uplift(0, 0)
+    assert demand_uplift(0, 3) > demand_uplift(0, 0)
+    assert demand_uplift(2, 3) > demand_uplift(1, 1)
+
+
 def test_rank_orders_by_descending_score():
     markets = [
         MarketOpportunity("A", 1.0),

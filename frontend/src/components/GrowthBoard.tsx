@@ -15,6 +15,12 @@ export function GrowthBoard({ growth }: Props) {
 
   const amounts = growth.allocations.map((a) => Number(a.amount));
   const max = Math.max(...amounts, 1);
+  const boosted =
+    growth.focusMarket && (growth.focusUplift ?? 1) > 1
+      ? `${growth.focusMarket} is demand-boosted ×${(growth.focusUplift ?? 1).toFixed(
+          2
+        )} from the holidays/events on the analysed route.`
+      : null;
 
   return (
     <div>
@@ -22,6 +28,7 @@ export function GrowthBoard({ growth }: Props) {
         Google Ads budget €{Number(growth.budget).toLocaleString()} split across
         markets by ROI of ad spend — demand × margin ÷ cost-per-click.
       </p>
+      {boosted && <p className="note">{boosted}</p>}
       <table className="board">
         <thead>
           <tr>
@@ -38,8 +45,11 @@ export function GrowthBoard({ growth }: Props) {
             const alloc = growth.allocations.find((a) => a.market === m.market);
             const amount = alloc ? Number(alloc.amount) : 0;
             return (
-              <tr key={m.market}>
-                <td className="market">{m.market}</td>
+              <tr key={m.market} className={m.focused ? "focused" : ""}>
+                <td className="market">
+                  {m.market}
+                  {m.focused ? " ★" : ""}
+                </td>
                 <td>{m.demandIndex}</td>
                 <td>€{m.cpcEur.toFixed(2)}</td>
                 <td>{m.score.toFixed(1)}</td>

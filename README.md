@@ -77,6 +77,33 @@ markets by ROI and the reasoning written out in the storyline.*
 - **Curated, deterministic artifact.** The one-pager is a first-class output generated from
   the same engine, reproducible byte-for-byte.
 
+## How it works (and where the numbers come from)
+
+**Flight price.** Each route has a base fare in [`data/routes.json`](data/routes.json); the
+recommended price is `base × seasonality × holiday × event`, clamped to the route's
+`[floor, ceiling]`. The multipliers are transparent rules in
+[`data/pricing-rules.json`](data/pricing-rules.json). Base fares are realistic seed values
+for European short-haul, not a live carrier feed — in production the base fare comes from the
+customer's revenue-management system; the adjustment logic stays the same.
+
+**Ads ROI score.** For each market: `score = demand × (1 + margin) ÷ cpc`, where demand is a
+search-interest index (0–100), margin is booking profitability (0–1), and CPC is the
+cost-per-click for travel keywords — all in [`data/markets.json`](data/markets.json). A
+high-demand but expensive market ranks below a cheaper, high-margin one, because the budget
+follows return on ad spend. These signals are seed values; they can be refreshed from Google
+Trends (demand) and Google Ads (CPC) via the bundled `fetch` MCP server. The model is real;
+the data is seed and swappable.
+
+**Pricing → allocation link.** When you analyse a route over a period, the holidays and
+events that raise its fares also **demand-boost that market** in the ads allocation
+(`score ×= uplift`, uplift ≥ 1). So a spike you see in the pricing calendar (e.g. Dublin at
+St. Patrick's Day) pushes that market up the ads ranking — one coherent signal → price →
+ad-ROI story.
+
+**The one-pager** is not hand-drawn: it is rendered by code (`onepager.py`) from the same
+engine outputs (the computed daily prices, the allocations, the storyline), and is
+deterministic — identical inputs produce a byte-identical SVG.
+
 ## Architecture
 
 ```mermaid

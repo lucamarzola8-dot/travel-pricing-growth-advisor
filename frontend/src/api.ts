@@ -50,8 +50,17 @@ export function fetchPrice(route: string, date: string): Promise<PriceResponse> 
   );
 }
 
-export function fetchGrowth(budget: number): Promise<GrowthResponse> {
-  return getJson<GrowthResponse>(`/growth?budget=${encodeURIComponent(budget)}`);
+export function fetchGrowth(
+  budget: number,
+  context?: { route: string; date: string; days: number }
+): Promise<GrowthResponse> {
+  const q = new URLSearchParams({ budget: String(budget) });
+  if (context) {
+    q.set("route", context.route);
+    q.set("date", context.date);
+    q.set("days", String(context.days));
+  }
+  return getJson<GrowthResponse>(`/growth?${q.toString()}`);
 }
 
 export function fetchStoryline(

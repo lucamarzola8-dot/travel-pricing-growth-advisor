@@ -60,6 +60,21 @@ def test_get_growth_valid():
     assert scores == sorted(scores, reverse=True)
 
 
+def test_get_growth_context_boosts_focused_market():
+    """A route/date context demand-boosts that route's market's score."""
+    plain = api.get_growth({"budget": "100000"})[1]
+    # Dublin around St. Patrick's Day: holiday + event -> uplift > 1.
+    ctx = api.get_growth(
+        {"budget": "100000", "route": "MXP-DUB", "date": "2026-03-15", "days": "8"}
+    )[1]
+    assert ctx["focusMarket"] == "DUB"
+    assert ctx["focusUplift"] > 1.0
+    dub_plain = next(m["score"] for m in plain["markets"] if m["market"] == "DUB")
+    dub_ctx = next(m["score"] for m in ctx["markets"] if m["market"] == "DUB")
+    assert dub_ctx > dub_plain
+    assert any(m["focused"] for m in ctx["markets"])
+
+
 def test_get_growth_negative_budget():
     with pytest.raises(api.BadRequest):
         api.get_growth({"budget": "-5"})

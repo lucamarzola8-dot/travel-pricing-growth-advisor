@@ -120,17 +120,62 @@ def get_price(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, Any
     return 200, _price_to_dict(route_code, result)
 
 
-def _market_opportunities(data_dir=None) -> list[MarketOpportunity]:
+def _period_demand_uplift(
+    route_code: str, start: date, days: int, data_dir=None
+) -> tuple[str | None, float]:
+    """Compute the demand uplift for the analysed route's market over the period.
+
+    Counts national-holiday days and event hits (within the pricing proximity
+    window) for the route's destination market across the ``days`` window, and
+    turns them into an uplift factor. Returns (focus_market, uplift). If the route
+    is unknown, returns (None, 1.0) so callers degrade gracefully.
+    """
+    from datetime import timedelta
+
+    try:
+        route = data.get_route(route_code, data_dir)
+    except data.UnknownRouteError:
+        return None, 1.0
+
+    market = route.destination_market
+    events = data.events_for_market(data.load_events(data_dir), market)
+    rules = data.load_pricing_rules(data_dir)
+
+    holiday_days = 0
+    event_hits = 0
+    for i in range(max(days, 0)):
+        d = start + timedelta(days=i)
+        if data.is_holiday(route.destination_country, d):
+            holiday_days += 1
+        for ev in events:
+            if abs((ev.date - d).days) <= rules.proximity_days:
+                event_hits += 1
+
+    return market, growth.demand_uplift(holiday_days, event_hits)
+
+
+def _market_opportunities(
+    data_dir=None,
+    *,
+    focus_market: str | None = None,
+    uplift: float = 1.0,
+) -> list[MarketOpportunity]:
     """Derive per-market Google Ads opportunity scores from the seed data.
 
     Uses the advertising dataset (search-demand index, cost-per-click, and margin)
     to compute a ROI-of-ad-spend score per market. Deterministic and offline.
     Markets without advertising data are skipped.
+
+    When ``focus_market``/``uplift`` are given, the focused market's score is
+    multiplied by the uplift (>= 1.0), linking the pricing view (demand spikes on
+    the analysed route) to the ads allocation.
     """
     ad_markets = data.load_markets(data_dir)
     opportunities: list[MarketOpportunity] = []
     for m in ad_markets.values():
         score = growth.opportunity_score(m.demand_index, m.margin_index, m.cpc_eur)
+        if focus_market is not None and m.code == focus_market:
+            score *= max(uplift, 1.0)
         opportunities.append(
             MarketOpportunity(
                 market=m.code,
@@ -143,19 +188,43 @@ def _market_opportunities(data_dir=None) -> list[MarketOpportunity]:
     return opportunities
 
 
+def _growth_context(params: dict[str, Any], data_dir=None) -> tuple[str | None, float]:
+    """Optional route/date/days context -> (focus_market, uplift).
+
+    If a route and date are supplied, the analysed route's market gets a demand
+    uplift derived from holidays/events in the window. Without context, returns
+    (None, 1.0) so the allocation is the plain portfolio ranking.
+    """
+    route_code = params.get("route")
+    date_raw = params.get("date")
+    if not route_code or not date_raw:
+        return None, 1.0
+    start = _parse_date(date_raw)
+    try:
+        days = int(params.get("days", 14))
+    except (TypeError, ValueError):
+        days = 14
+    return _period_demand_uplift(str(route_code), start, days, data_dir)
+
+
 def get_growth(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, Any]]:
-    """GET /growth?budget= -> markets ranked by Google Ads ROI + budget split.
+    """GET /growth?budget=[&route=&date=&days=] -> markets ranked by Google Ads ROI.
 
     ``budget`` is the Google Ads / marketing budget to allocate across markets,
-    not a flight fare. Each market carries the drivers behind its score.
+    not a flight fare. If a route/date context is supplied, that route's market
+    is demand-boosted from its holidays/events in the window, linking the pricing
+    view to the ads allocation. Each market carries the drivers behind its score.
     """
     budget = _parse_budget(_require(params, "budget"))
-    markets = _market_opportunities(data_dir)
+    focus_market, uplift = _growth_context(params, data_dir)
+    markets = _market_opportunities(data_dir, focus_market=focus_market, uplift=uplift)
     ranked = growth.rank(markets)
     allocations = growth.allocate(budget, ranked)
     return 200, {
         "budget": str(budget),
         "budgetKind": "google_ads",
+        "focusMarket": focus_market,
+        "focusUplift": round(uplift, 3),
         "markets": [
             {
                 "market": m.market,
@@ -163,6 +232,7 @@ def get_growth(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, An
                 "demandIndex": round(m.demand_index, 1),
                 "cpcEur": round(m.cpc_eur, 2),
                 "marginIndex": round(m.margin_index, 2),
+                "focused": m.market == focus_market,
             }
             for m in ranked
         ],
@@ -179,7 +249,13 @@ def get_storyline(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str,
         price = _price_result_for(route_code, travel_date, data_dir)
     except data.UnknownRouteError as exc:
         raise BadRequest(str(exc)) from exc
-    allocations = growth.allocate(budget, growth.rank(_market_opportunities(data_dir)))
+    focus_market, uplift = _period_demand_uplift(
+        route_code, travel_date, int(params.get("days", 14)) if str(params.get("days", "")).isdigit() else 14, data_dir
+    )
+    ranked = growth.rank(
+        _market_opportunities(data_dir, focus_market=focus_market, uplift=uplift)
+    )
+    allocations = growth.allocate(budget, ranked)
     lines = storyline.build_storyline(route_code, price, allocations)
     return 200, {"route": route_code, "storyline": lines}
 
@@ -228,7 +304,8 @@ def get_onepager(params: dict[str, Any], data_dir=None) -> tuple[int, str, str]:
             )
         )
 
-    markets = _market_opportunities(data_dir)
+    focus_market, uplift = _period_demand_uplift(route_code, start, days_n, data_dir)
+    markets = _market_opportunities(data_dir, focus_market=focus_market, uplift=uplift)
     ranked = growth.rank(markets)
     allocations = growth.allocate(budget, ranked)
     mid_price = _price_result_for(route_code, start, data_dir)
