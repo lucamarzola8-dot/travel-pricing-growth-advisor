@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="520" viewBox="0 0 1000 520" font-family="system-ui, Segoe UI, Roboto, sans-serif">
+  <defs>
+    <style>
+      .lbl { fill: #232f3e; font-size: 13px; font-weight: 600; }
+      .sub { fill: #5a6b7b; font-size: 11px; }
+      .svc { fill: #ffffff; stroke: #d5dbdb; stroke-width: 1.5; rx: 10; }
+      .flow { stroke: #879196; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .grp { fill: none; stroke: #d97706; stroke-width: 1.5; stroke-dasharray: 6 4; rx: 12; }
+      .grptxt { fill: #d97706; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+      .icon { font-size: 26px; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#879196"/>
+    </marker>
+  </defs>
+
+  <rect width="1000" height="520" fill="#f2f3f3"/>
+  <text x="30" y="38" fill="#232f3e" font-size="20" font-weight="700">Travel Pricing &amp; Growth Advisor — AWS architecture</text>
+  <text x="30" y="58" class="sub">Serverless, defined as code with AWS CDK. Validated with cdk synth; deploy optional.</text>
+
+  <!-- User + Frontend group -->
+  <rect x="30" y="90" width="250" height="180" class="grp"/>
+  <text x="42" y="110" class="grptxt">EDGE / FRONTEND</text>
+
+  <rect x="55" y="130" width="90" height="90" class="svc"/>
+  <text x="100" y="172" text-anchor="middle" class="icon">👤</text>
+  <text x="100" y="200" text-anchor="middle" class="lbl">Analyst</text>
+
+  <rect x="170" y="130" width="90" height="90" class="svc"/>
+  <text x="215" y="170" text-anchor="middle" class="icon" fill="#8c4fff">☁</text>
+  <text x="215" y="196" text-anchor="middle" class="lbl">CloudFront</text>
+  <text x="215" y="212" text-anchor="middle" class="sub">+ S3 (React app)</text>
+
+  <!-- API group -->
+  <rect x="330" y="90" width="180" height="180" class="grp" stroke="#cd2264"/>
+  <text x="342" y="110" class="grptxt" fill="#cd2264">API</text>
+
+  <rect x="365" y="140" width="110" height="90" class="svc"/>
+  <text x="420" y="180" text-anchor="middle" class="icon" fill="#cd2264">⇆</text>
+  <text x="420" y="206" text-anchor="middle" class="lbl">API Gateway</text>
+  <text x="420" y="222" text-anchor="middle" class="sub">REST</text>
+
+  <!-- Compute group -->
+  <rect x="560" y="70" width="200" height="330" class="grp" stroke="#ed7100"/>
+  <text x="572" y="90" class="grptxt" fill="#ed7100">COMPUTE — LAMBDA</text>
+
+  <rect x="590" y="110" width="140" height="70" class="svc"/>
+  <text x="612" y="152" class="icon" fill="#ed7100">λ</text>
+  <text x="648" y="140" class="lbl">Pricing</text>
+  <text x="648" y="158" class="sub">/price</text>
+
+  <rect x="590" y="200" width="140" height="70" class="svc"/>
+  <text x="612" y="242" class="icon" fill="#ed7100">λ</text>
+  <text x="648" y="230" class="lbl">Growth</text>
+  <text x="648" y="248" class="sub">/growth</text>
+
+  <rect x="590" y="290" width="140" height="70" class="svc"/>
+  <text x="612" y="332" class="icon" fill="#ed7100">λ</text>
+  <text x="648" y="320" class="lbl">One-pager</text>
+  <text x="648" y="338" class="sub">/onepager (SVG)</text>
+
+  <text x="590" y="388" class="sub">bundles travel_advisor core</text>
+
+  <!-- Data group -->
+  <rect x="800" y="90" width="170" height="330" class="grp" stroke="#3b7a2a"/>
+  <text x="812" y="110" class="grptxt" fill="#3b7a2a">DATA</text>
+
+  <rect x="825" y="130" width="120" height="90" class="svc"/>
+  <text x="885" y="172" text-anchor="middle" class="icon" fill="#3b7a2a">🪣</text>
+  <text x="885" y="198" text-anchor="middle" class="lbl">S3</text>
+  <text x="885" y="214" text-anchor="middle" class="sub">seed datasets</text>
+
+  <rect x="825" y="250" width="120" height="90" class="svc"/>
+  <text x="885" y="292" text-anchor="middle" class="icon" fill="#2e73b8">🗄</text>
+  <text x="885" y="318" text-anchor="middle" class="lbl">DynamoDB</text>
+  <text x="885" y="334" text-anchor="middle" class="sub">results cache</text>
+
+  <!-- Flows -->
+  <path class="flow" d="M 260 175 L 363 180"/>
+  <path class="flow" d="M 475 150 L 588 145"/>
+  <path class="flow" d="M 475 185 L 588 235"/>
+  <path class="flow" d="M 475 215 L 588 325"/>
+  <path class="flow" d="M 730 145 L 824 160"/>
+  <path class="flow" d="M 730 235 L 824 280"/>
+  <path class="flow" d="M 730 325 L 824 300"/>
+
+  <text x="30" y="470" class="sub">Data flow: Analyst → CloudFront/S3 (React) → API Gateway → Lambda (pricing / growth / one-pager) → S3 (seed data) + DynamoDB (cache).</text>
+  <text x="30" y="490" class="sub">All resources are declared in infra/ (AWS CDK, TypeScript) and validated locally with `cdk synth` — no credentials or live deploy required.</text>
+</svg>

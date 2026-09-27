@@ -137,23 +137,18 @@ deterministic — identical inputs produce a byte-identical SVG.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    U[Analyst] -->|browser| FE[React Dashboard]
-    FE -->|REST / JSON| API[API Gateway]
-    API --> LP[Lambda: pricing]
-    API --> LG[Lambda: growth]
-    API --> LO[Lambda: one-pager]
-    LP --> CORE[[travel_advisor core]]
-    LG --> CORE
-    LO --> CORE
-    CORE --> S3[(S3: events & holidays)]
-    LP --> DDB[(DynamoDB: results cache)]
-    LG --> DDB
-```
+![AWS architecture](docs/aws-architecture.svg)
 
-The core is pure Python (import-only); the Lambda/API layer does the I/O. The same core
-runs locally and in AWS, so nothing on the critical path needs the cloud to be exercised.
+A serverless AWS design defined as code with **AWS CDK** (TypeScript):
+
+- **CloudFront + S3** serve the React dashboard at the edge.
+- **API Gateway** (REST) fronts three **Lambda** functions — pricing, growth, and one-pager —
+  each bundling the pure `travel_advisor` core.
+- **S3** holds the seed datasets; **DynamoDB** caches results.
+
+The core is pure Python (import-only); the Lambda/API layer does the I/O, so the same core
+runs locally and in AWS and nothing on the critical path needs the cloud. All resources live
+in `infra/` and are validated with `cdk synth` — no credentials or live deploy required.
 
 ## API
 
