@@ -1,13 +1,14 @@
 # Travel Pricing & Growth Advisor
 
-An event-driven dynamic pricing and international growth advisory platform for the travel
-vertical (airlines / OTAs). It turns **public signals** — national holidays and public
-events (trade fairs, concerts, sporting events) — into **pricing decisions** and
+An event-driven **dynamic pricing** and **international growth advisory** platform for the
+travel vertical (airlines / OTAs). It turns **public signals** — national holidays and
+public events (trade fairs, concerts, sporting events) — into **pricing decisions** and
 **market-investment recommendations**, and explains them in business language a
 decision-maker can act on.
 
-> Built during the **Kiro University Challenge 2026** to demonstrate spec-driven
-> development, steering, hooks, property-based testing, MCP, custom agents, and Kiro Powers.
+> Built during the **Kiro University Challenge 2026**. It demonstrates spec-driven
+> development, steering, hooks, property-based testing, MCP, custom agents, and a packaged
+> Kiro Power — around a real product, not a toy.
 
 ## The business problem
 
@@ -15,94 +16,133 @@ Airlines and travel companies routinely leave revenue on the table because prici
 market-investment decisions are made with static rules, spreadsheets, and intuition. This
 platform answers four questions they actually ask:
 
-1. **What price should this route sell at, on this date, for this market?** — dynamic price
-   from seasonality, local holidays, and nearby events.
-2. **Am I blind to incoming demand?** — surfaces demand spikes tied to events/holidays per
-   market before they happen.
+1. **What price should this route sell at, on this date, for this market?** — a dynamic
+   price from seasonality, local holidays, and nearby events.
+2. **Am I blind to incoming demand?** — it surfaces demand spikes tied to events/holidays
+   per market *before* they happen (e.g. Barcelona during Mobile World Congress).
 3. **Which international markets deserve more investment, and when?** — a growth-opportunity
    score ranks markets and suggests where to concentrate budget/capacity.
-4. **How do I explain this decision convincingly?** — generates a "storyline": the key
-   insights in plain business language with supporting charts.
+4. **How do I explain this decision convincingly?** — it generates a client "storyline":
+   the key insights in plain business language, plus a shareable one-pager.
 
-## What the finished product includes
+## The client one-pager
 
-- **Interactive web dashboard** (React) — pricing calendar, events & demand timeline,
-  growth-opportunity board, and a client-ready storyline view.
+`GET /onepager` renders a fixed-layout, **deterministic** SVG briefing straight from the
+engine — the report a growth consultant hands to a client. Same inputs produce a
+byte-identical report.
+
+![Client one-pager sample](docs/onepager-sample.svg)
+
+*Milan → Dublin around St. Patrick's Day: the 17 March fare jumps +47% (Irish national
+holiday **and** the St. Patrick's Day Festival), with the budget split across markets and
+the reasoning written out in the storyline.*
+
+## What's inside
+
+- **Interactive dashboard** (React + Vite) — a city-name route selector (12 EMEA routes), a
+  pricing calendar that colours each day by uplift and reveals its factors on hover, a
+  growth-opportunity board with per-market allocations, the storyline, and a one-click
+  one-pager.
 - **Pricing engine + growth advisor** (Python) — deterministic, explainable, fully tested
-  including property-based tests.
+  (48 tests including property-based tests). Every price and score carries the factors that
+  produced it.
 - **AWS infrastructure as code** (CDK / TypeScript) — S3, Lambda, API Gateway, DynamoDB —
-  validated with `cdk synth` (deploy optional).
-- **Kiro artifacts** — spec, steering, hooks, custom agents, MCP config, and a packaged Power.
+  validated with `cdk synth` (deploy optional, no credentials needed to validate).
+- **Kiro artifacts** — spec, steering, hooks, custom agents, MCP config, and a packaged
+  Power.
+
+## Why it stands out
+
+- **Deterministic core, proven by property tests.** Pricing and growth are pure functions;
+  invariants (price stays within `[floor, ceiling]`, a holiday/event never lowers the price,
+  allocations sum exactly to the budget, scores are monotonic) are verified over hundreds of
+  generated inputs — and over **arbitrary rule configurations**, not just the defaults.
+- **Extensible by data, not code.** Pricing behaviour (seasonality bands, holiday boost,
+  event proximity) lives in [`data/pricing-rules.json`](data/pricing-rules.json). Add or tune
+  a rule by editing data; a new destination is a row in
+  [`data/routes.json`](data/routes.json) plus its events.
+- **Curated, deterministic artifact.** The one-pager is a first-class output generated from
+  the same engine, reproducible byte-for-byte.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    U[User / Analyst] -->|browser| FE[React Dashboard]
-    FE -->|HTTPS| API[API Gateway]
-    API --> L1[Lambda: Pricing Engine]
-    API --> L2[Lambda: Growth Advisor]
-    L1 --> DDB[(DynamoDB: Results)]
-    L2 --> DDB
-    L1 --> S3[(S3: Events & Holidays Data)]
-    L2 --> S3
+    U[Analyst] -->|browser| FE[React Dashboard]
+    FE -->|REST / JSON| API[API Gateway]
+    API --> LP[Lambda: pricing]
+    API --> LG[Lambda: growth]
+    API --> LO[Lambda: one-pager]
+    LP --> CORE[[travel_advisor core]]
+    LG --> CORE
+    LO --> CORE
+    CORE --> S3[(S3: events & holidays)]
+    LP --> DDB[(DynamoDB: results cache)]
+    LG --> DDB
 ```
+
+The core is pure Python (import-only); the Lambda/API layer does the I/O. The same core
+runs locally and in AWS, so nothing on the critical path needs the cloud to be exercised.
+
+## API
+
+| Endpoint | Returns |
+|----------|---------|
+| `GET /routes` | available routes with city labels (`Milan → Barcelona (MXP-BCN)`) |
+| `GET /price?route=&date=` | recommended price + the ordered factors behind it |
+| `GET /growth?budget=` | markets ranked by opportunity + budget allocation |
+| `GET /storyline?route=&date=&budget=` | business-language insights |
+| `GET /onepager?route=&date=&days=&budget=` | deterministic SVG client briefing |
 
 ## Repository layout
 
 ```
 travel-pricing-growth-advisor/
-  backend/      Python pricing engine, growth advisor, and tests
+  backend/      Python core (pricing, growth, storyline, one-pager), API, tests
   infra/        AWS CDK (TypeScript) infrastructure as code
-  frontend/     React dashboard
-  data/         Seed datasets (holidays, events, routes)
-  .kiro/        Kiro steering, specs, hooks, agents
+  frontend/     React + Vite dashboard
+  data/         Seed datasets: routes, events, and pricing-rules
+  power/        travel-growth-toolkit Kiro Power (skill + MCP)
+  docs/         Kiro feature map + one-pager sample
+  .kiro/        Steering, specs, hooks, agents, MCP settings
 ```
-
-## Kiro feature coverage
-
-This project demonstrates the Kiro University Challenge lessons. Full map in
-[`docs/kiro-features.md`](docs/kiro-features.md):
-
-- **Spec-driven development** — `.kiro/specs/` (EARS requirements, design, tasks)
-- **Steering** — `.kiro/steering/` (product, tech, structure conventions)
-- **Hooks** — `.kiro/hooks/` (tests on backend save, type-check on frontend save, `cdk synth` on infra save)
-- **Property-based testing** — `backend/tests/properties/` (pricing P1–P5, growth G1–G5)
-- **MCP** — `.kiro/settings/mcp.json` (optional event-enrichment `fetch` server, off by default)
-- **Custom agents** — `.kiro/agents/` (`travel-data-analyst`, `aws-infra-reviewer`)
-- **Power** — `power/` (`travel-growth-toolkit`: skill + MCP, packaged for reuse)
-
-## Highlights
-
-- **Deterministic core, proven by property tests.** Pricing and growth are pure functions;
-  invariants (price bounds, holiday/event never lower the price, allocations sum exactly)
-  are verified over hundreds of generated inputs — and over arbitrary rule configurations.
-- **Extensible by data, not code.** Pricing behaviour (seasonality bands, holiday boost,
-  event proximity) lives in `data/pricing-rules.json`. Add or tune a rule by editing data.
-- **Client one-pager artifact.** `GET /onepager` renders a fixed-layout, deterministic SVG
-  briefing (price chart + top growth markets + storyline) straight from the engine — the
-  report a consultant hands to a client.
 
 ## Running it
 
-```
+```powershell
 # Backend API (from backend/)
-python -m venv .venv && .venv/Scripts/pip install holidays pytest hypothesis
+python -m venv .venv
+.venv/Scripts/pip install holidays pytest hypothesis
 $env:PYTHONPATH="src"; .venv/Scripts/python -m travel_advisor.server   # http://127.0.0.1:8000
 
 # Tests (from backend/)
 .venv/Scripts/python -m pytest -q
 
-# Infrastructure validation (from infra/)
+# Infrastructure validation (from infra/) — no AWS credentials needed
 npm install && npm run synth
 
-# Dashboard (from frontend/)
+# Dashboard (from frontend/) — run alongside the backend
 npm install && npm run dev                                             # http://localhost:5173
 ```
 
+## Kiro feature coverage
+
+Every Kiro University Challenge lesson is demonstrated in the repo. Full map in
+[`docs/kiro-features.md`](docs/kiro-features.md):
+
+| Lesson | Where |
+|--------|-------|
+| Spec-driven development | [`.kiro/specs/`](.kiro/specs/) — EARS requirements, design, tasks |
+| Steering | [`.kiro/steering/`](.kiro/steering/) — product, tech, structure |
+| Hooks | [`.kiro/hooks/`](.kiro/hooks/) — tests on backend save, type-check on frontend save, `cdk synth` on infra save |
+| Property-based testing | [`backend/tests/properties/`](backend/tests/properties/) — pricing P1–P5, growth G1–G5 |
+| Powers | [`power/`](power/) — `travel-growth-toolkit` (usage in its README) |
+| MCP | [`.kiro/settings/mcp.json`](.kiro/settings/mcp.json) — optional `fetch` enrichment, off by default |
+| Custom agents | [`.kiro/agents/`](.kiro/agents/) — `travel-data-analyst`, `aws-infra-reviewer` |
+| Bonus — Package a Power | [`power/plugin.json`](power/plugin.json) |
+
 ## Status
 
-Core product complete: backend + tests, property-based tests, API, CDK infra
-(validated with `cdk synth`), and the dashboard all work. Remaining: presentation
-polish (screenshots, richer datasets, frontend styling) and optional live AWS deploy.
-See `.kiro/specs/travel-pricing-growth-advisor/tasks.md` for the task list.
+Core product complete and verified: 48 tests green, `cdk synth` clean, dashboard and
+one-pager working end-to-end. Optional next steps: live AWS deploy, a public demo, and
+further visual polish.
