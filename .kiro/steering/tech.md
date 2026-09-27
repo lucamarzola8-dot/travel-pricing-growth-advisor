@@ -20,6 +20,11 @@
   reference date in). This keeps them deterministic and property-testable.
 - **Every result carries its explanation.** Pricing/scoring functions return the value *and*
   the list of factors that produced it, never a bare number.
+- **Advertising data drives growth scoring.** Per-market signals (search-demand index,
+  cost-per-click, margin) live in `data/markets.json`. The opportunity score is ROI of ad
+  spend: `demand * (1 + margin) / cpc`. Keep it deterministic and offline; the optional
+  Google Trends MCP enrichment may refresh the demand index but must never be on the
+  critical path.
 - **CDK is validated, not necessarily deployed.** Correctness is proven with `cdk synth`.
   Live deploy (`cdk deploy`) is optional and must never be a prerequisite for tests passing.
   CDK is a project dev-dependency (`npx cdk` / `npm` scripts), never assumed globally installed.

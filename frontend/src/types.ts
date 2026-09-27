@@ -15,6 +15,9 @@ export interface PriceResponse {
 export interface MarketScore {
   market: string;
   score: number;
+  demandIndex: number;
+  cpcEur: number;
+  marginIndex: number;
 }
 
 export interface AllocationItem {

@@ -24,12 +24,15 @@ const FALLBACK_ROUTES: RouteInfo[] = [
   },
 ];
 
+type Tab = "pricing" | "growth";
+
 export function App() {
   const [routes, setRoutes] = useState<RouteInfo[]>(FALLBACK_ROUTES);
   const [route, setRoute] = useState(FALLBACK_ROUTES[0].code);
   const [start, setStart] = useState("2026-03-01");
   const [days, setDays] = useState(14);
   const [budget, setBudget] = useState(100000);
+  const [tab, setTab] = useState<Tab>("pricing");
 
   const [priced, setPriced] = useState<PricedDay[]>([]);
   const [growth, setGrowth] = useState<GrowthResponse | null>(null);
@@ -75,9 +78,25 @@ export function App() {
       <header>
         <h1>Travel Pricing &amp; Growth Advisor</h1>
         <p className="subtitle">
-          Turn public holidays and events into pricing and investment decisions.
+          Turn public holidays and events into flight pricing and Google Ads
+          budget decisions.
         </p>
       </header>
+
+      <nav className="tabs">
+        <button
+          className={tab === "pricing" ? "tab active" : "tab"}
+          onClick={() => setTab("pricing")}
+        >
+          Flight Pricing
+        </button>
+        <button
+          className={tab === "growth" ? "tab active" : "tab"}
+          onClick={() => setTab("growth")}
+        >
+          Ads Growth Allocation
+        </button>
+      </nav>
 
       <section className="controls">
         <label>
@@ -109,7 +128,7 @@ export function App() {
           />
         </label>
         <label>
-          Budget (€)
+          Google Ads budget (€)
           <input
             type="number"
             min={0}
@@ -134,26 +153,35 @@ export function App() {
 
       {error && <div className="error">Error: {error}</div>}
 
-      <div className="grid">
-        <section className="panel">
-          <h2>Pricing calendar</h2>
-          <p className="muted">Hover a day to see the factors behind its price.</p>
-          <PricingCalendar days={priced} />
-        </section>
+      {tab === "pricing" ? (
+        <div className="grid">
+          <section className="panel wide">
+            <h2>Pricing calendar — {route}</h2>
+            <p className="muted">
+              Recommended fare per day for this route. Hover a day to see the
+              factors (seasonality, holiday, event) behind its price.
+            </p>
+            <PricingCalendar days={priced} />
+          </section>
+        </div>
+      ) : (
+        <div className="grid">
+          <section className="panel wide">
+            <h2>Ads growth allocation</h2>
+            <GrowthBoard growth={growth} />
+          </section>
 
-        <section className="panel">
-          <h2>Growth opportunities</h2>
-          <GrowthBoard growth={growth} />
-        </section>
-
-        <section className="panel wide">
-          <h2>Client storyline</h2>
-          <Storyline lines={storyline} />
-        </section>
-      </div>
+          <section className="panel wide">
+            <h2>Client storyline</h2>
+            <Storyline lines={storyline} />
+          </section>
+        </div>
+      )}
 
       <footer className="muted">
-        Data is offline seed data + public holidays. Prices are illustrative.
+        Flight Pricing tab = revenue management for one route. Ads Growth
+        Allocation tab = where to spend the Google Ads budget across markets.
+        Offline seed data + public holidays; figures are illustrative.
       </footer>
     </div>
   );

@@ -6,7 +6,11 @@ interface Props {
 
 export function GrowthBoard({ growth }: Props) {
   if (!growth) {
-    return <p className="muted">Set a budget and load growth recommendations.</p>;
+    return (
+      <p className="muted">
+        Set a Google Ads budget and run Analyze to see where it should go.
+      </p>
+    );
   }
 
   const amounts = growth.allocations.map((a) => Number(a.amount));
@@ -15,15 +19,17 @@ export function GrowthBoard({ growth }: Props) {
   return (
     <div>
       <p className="muted">
-        Budget €{Number(growth.budget).toLocaleString()} split across markets by
-        opportunity score.
+        Google Ads budget €{Number(growth.budget).toLocaleString()} split across
+        markets by ROI of ad spend — demand × margin ÷ cost-per-click.
       </p>
       <table className="board">
         <thead>
           <tr>
             <th>Market</th>
-            <th>Score</th>
-            <th>Allocation</th>
+            <th>Demand</th>
+            <th>CPC</th>
+            <th>ROI score</th>
+            <th>Ad budget</th>
             <th></th>
           </tr>
         </thead>
@@ -34,7 +40,9 @@ export function GrowthBoard({ growth }: Props) {
             return (
               <tr key={m.market}>
                 <td className="market">{m.market}</td>
-                <td>{m.score.toFixed(2)}</td>
+                <td>{m.demandIndex}</td>
+                <td>€{m.cpcEur.toFixed(2)}</td>
+                <td>{m.score.toFixed(1)}</td>
                 <td>€{amount.toLocaleString()}</td>
                 <td className="bar-cell">
                   <div

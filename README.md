@@ -1,10 +1,11 @@
 # Travel Pricing & Growth Advisor
 
-An event-driven **dynamic pricing** and **international growth advisory** platform for the
-travel vertical (airlines / OTAs). It turns **public signals** — national holidays and
-public events (trade fairs, concerts, sporting events) — into **pricing decisions** and
-**market-investment recommendations**, and explains them in business language a
-decision-maker can act on.
+An event-driven **dynamic pricing** and **Google Ads growth allocation** platform for the
+travel vertical (airlines and OTAs like Booking / Expedia). It turns **public signals** —
+national holidays and public events (trade fairs, concerts, sporting events) — plus
+**advertising signals** (search demand and cost-per-click per market) into two decisions:
+what to charge for a flight, and where to spend the ad budget. Both are explained in
+business language a decision-maker can act on.
 
 > Built during the **Kiro University Challenge 2026**. It demonstrates spec-driven
 > development, steering, hooks, property-based testing, MCP, custom agents, and a packaged
@@ -16,14 +17,20 @@ Airlines and travel companies routinely leave revenue on the table because prici
 market-investment decisions are made with static rules, spreadsheets, and intuition. This
 platform answers four questions they actually ask:
 
-1. **What price should this route sell at, on this date, for this market?** — a dynamic
-   price from seasonality, local holidays, and nearby events.
+1. **What price should this route sell at, on this date?** — a dynamic fare from
+   seasonality, local holidays, and nearby events (the **Flight Pricing** tab).
 2. **Am I blind to incoming demand?** — it surfaces demand spikes tied to events/holidays
-   per market *before* they happen (e.g. Barcelona during Mobile World Congress).
-3. **Which international markets deserve more investment, and when?** — a growth-opportunity
-   score ranks markets and suggests where to concentrate budget/capacity.
-4. **How do I explain this decision convincingly?** — it generates a client "storyline":
-   the key insights in plain business language, plus a shareable one-pager.
+   *before* they happen (e.g. Barcelona during Mobile World Congress).
+3. **Where should I spend my Google Ads budget?** — markets are ranked by **ROI of ad
+   spend** (search demand × margin ÷ cost-per-click), and the budget is split accordingly
+   (the **Ads Growth Allocation** tab). This is the international-growth-consultant view.
+4. **How do I explain this to a client?** — it generates a "storyline" and a shareable
+   one-pager: the key insights in plain business language.
+
+**Who uses it:** commercial and revenue teams at airlines, and growth teams at OTAs
+(Booking, Expedia, eDreams) that spend heavily on Google Ads across many markets. It is a
+B2B decision-support tool, not a consumer booking app — the traveller only ever sees the
+resulting price.
 
 ## The client one-pager
 
@@ -34,8 +41,8 @@ byte-identical report.
 ![Client one-pager sample](docs/onepager-sample.svg)
 
 *Milan → Dublin around St. Patrick's Day: the 17 March fare jumps +47% (Irish national
-holiday **and** the St. Patrick's Day Festival), with the budget split across markets and
-the reasoning written out in the storyline.*
+holiday **and** the St. Patrick's Day Festival), with the Google Ads budget split across
+markets by ROI and the reasoning written out in the storyline.*
 
 ## What's inside
 
@@ -57,10 +64,16 @@ the reasoning written out in the storyline.*
   invariants (price stays within `[floor, ceiling]`, a holiday/event never lowers the price,
   allocations sum exactly to the budget, scores are monotonic) are verified over hundreds of
   generated inputs — and over **arbitrary rule configurations**, not just the defaults.
+- **Ad-ROI growth allocation.** Markets are scored by return on ad spend — search demand
+  and margin lift the score, a higher cost-per-click lowers it. A high-demand but expensive
+  market (e.g. London) can rank below a cheaper, high-margin one (e.g. Lisbon): the budget
+  follows ROI, not raw demand. Signals live in [`data/markets.json`](data/markets.json).
 - **Extensible by data, not code.** Pricing behaviour (seasonality bands, holiday boost,
-  event proximity) lives in [`data/pricing-rules.json`](data/pricing-rules.json). Add or tune
-  a rule by editing data; a new destination is a row in
-  [`data/routes.json`](data/routes.json) plus its events.
+  event proximity) lives in [`data/pricing-rules.json`](data/pricing-rules.json). Advertising
+  signals live in `data/markets.json`. A new destination is a row in
+  [`data/routes.json`](data/routes.json) plus its events. Google Trends can optionally refresh
+  the demand index via the bundled `fetch` MCP server (off by default; seed data stays the
+  source of truth so the product always runs offline).
 - **Curated, deterministic artifact.** The one-pager is a first-class output generated from
   the same engine, reproducible byte-for-byte.
 
@@ -101,7 +114,7 @@ travel-pricing-growth-advisor/
   backend/      Python core (pricing, growth, storyline, one-pager), API, tests
   infra/        AWS CDK (TypeScript) infrastructure as code
   frontend/     React + Vite dashboard
-  data/         Seed datasets: routes, events, and pricing-rules
+  data/         Seed datasets: routes, events, pricing-rules, and market ad signals
   power/        travel-growth-toolkit Kiro Power (skill + MCP)
   docs/         Kiro feature map + one-pager sample
   .kiro/        Steering, specs, hooks, agents, MCP settings
