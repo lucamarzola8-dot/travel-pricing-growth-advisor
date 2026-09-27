@@ -12,6 +12,11 @@ dev = [
     "pytest>=8.0",
     "hypothesis>=6.100",
 ]
+# Optional Google Trends enrichment for the demand signal (offline seed refresh,
+# never used at request time). See scripts/enrich_demand.py.
+enrich = [
+    "pytrends>=4.9",
+]
 
 [build-system]
 requires = ["setuptools>=68"]

@@ -46,6 +46,23 @@ def opportunity_score(
     return demand * (_MARGIN_UPLIFT + marg) / cpc
 
 
+def normalize_interest(raw: dict[str, float]) -> dict[str, int]:
+    """Scale raw search-interest values to a 0-100 demand index (pure, no network).
+
+    The largest raw value maps to 100 and the rest scale linearly, matching the
+    0-100 convention of ``demand_index`` in ``markets.json``. Used by the optional
+    Google Trends enrichment to turn raw interest into the seed's index. Negative
+    values are floored at 0; an all-zero (or empty) input yields all zeros.
+    """
+    if not raw:
+        return {}
+    clamped = {k: max(float(v), 0.0) for k, v in raw.items()}
+    peak = max(clamped.values(), default=0.0)
+    if peak <= 0:
+        return {k: 0 for k in clamped}
+    return {k: round(v / peak * 100) for k, v in clamped.items()}
+
+
 def demand_uplift(holiday_days: int, event_hits: int) -> float:
     """Demand uplift factor (>= 1.0) for a market over an analysed period.
 

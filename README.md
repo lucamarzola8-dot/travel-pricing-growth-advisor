@@ -40,6 +40,19 @@ and the cost-per-click is low. So a very popular but expensive market (e.g. Lond
 CPC) can rank below a cheaper, high-margin one (e.g. Lisbon) — the budget follows ROI, not
 raw popularity.
 
+**Real demand signal (optional).** The `demand_index` in `data/markets.json` ships as
+realistic seed values but can be refreshed from **live Google Trends** search interest:
+
+```
+pip install pytrends
+python scripts/enrich_demand.py --dry-run   # preview
+python scripts/enrich_demand.py             # write updated demand_index into the seed
+```
+
+This is offline-first by design: the script updates the **seed file** the app reads; the
+app never calls the network at request time. If `pytrends` is missing or offline, the
+script skips gracefully and leaves the seed untouched.
+
 **Who uses it:** commercial and revenue teams at airlines, and growth teams at OTAs
 (Booking, Expedia, eDreams) that run Google Ads across many markets. It is a B2B
 decision-support tool, not a consumer booking app — the traveller only sees the resulting

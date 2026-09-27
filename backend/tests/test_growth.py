@@ -37,6 +37,23 @@ def test_load_markets_has_advertising_fields():
     assert lhr.demand_index > 0 and lhr.cpc_eur > 0 and 0 <= lhr.margin_index <= 1
 
 
+def test_normalize_interest_scales_to_0_100():
+    from travel_advisor.growth import normalize_interest
+
+    out = normalize_interest({"A": 50.0, "B": 100.0, "C": 0.0})
+    assert out == {"A": 50, "B": 100, "C": 0}
+
+
+def test_normalize_interest_edge_cases():
+    from travel_advisor.growth import normalize_interest
+
+    assert normalize_interest({}) == {}
+    # all zero -> all zero (no division by zero)
+    assert normalize_interest({"A": 0.0, "B": 0.0}) == {"A": 0, "B": 0}
+    # negatives floored at 0
+    assert normalize_interest({"A": -10.0, "B": 20.0}) == {"A": 0, "B": 100}
+
+
 def test_ad_breakdown_channels_sum_to_amount():
     from travel_advisor.data import ad_breakdown
 
