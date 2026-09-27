@@ -79,6 +79,23 @@ button.primary:disabled {
   cursor: default;
 }
 
+a.secondary {
+  display: inline-block;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+a.secondary:hover {
+  background: rgba(56, 189, 248, 0.12);
+}
+
 .error {
   margin-top: 16px;
   padding: 12px;

@@ -18,7 +18,7 @@ from decimal import Decimal
 from typing import Any
 
 from . import data, growth, storyline
-from .models import Allocation, MarketOpportunity, PriceResult
+from .models import Allocation, MarketOpportunity, PriceResult, PricedDay
 
 
 class BadRequest(ValueError):
@@ -168,6 +168,69 @@ def get_storyline(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str,
     return 200, {"route": route_code, "storyline": lines}
 
 
+def get_onepager(params: dict[str, Any], data_dir=None) -> tuple[int, str, str]:
+    """GET /onepager?route=&date=&days=&budget= -> deterministic SVG report.
+
+    Returns (status, svg_string, content_type). This is the client-ready
+    "one-pager" artifact, rendered straight from the engine.
+    """
+    from . import onepager as onepager_mod
+    from .pricing import price_for
+
+    route_code = _require(params, "route")
+    start = _parse_date(_require(params, "date"))
+    budget = _parse_budget(_require(params, "budget"))
+    try:
+        days_n = int(params.get("days", 14))
+    except (TypeError, ValueError) as exc:
+        raise BadRequest(f"invalid days: {params.get('days')!r}") from exc
+    if not 1 <= days_n <= 31:
+        raise BadRequest("days must be between 1 and 31")
+
+    try:
+        route = data.get_route(route_code, data_dir)
+    except data.UnknownRouteError as exc:
+        raise BadRequest(str(exc)) from exc
+
+    events = data.events_for_market(data.load_events(data_dir), route.destination_market)
+    rules = data.load_pricing_rules(data_dir)
+
+    from datetime import timedelta
+
+    priced: list[PricedDay] = []
+    for i in range(days_n):
+        d = start + timedelta(days=i)
+        holiday = data.is_holiday(route.destination_country, d)
+        pr = price_for(route, d, holiday=holiday, events=events, rules=rules)
+        priced.append(
+            PricedDay(
+                date=d.isoformat(),
+                price=float(pr.price),
+                base=float(pr.base),
+                deltaPct=round(pr.delta_pct, 2),
+                factors=pr.factors,
+            )
+        )
+
+    markets = _market_opportunities(data_dir)
+    ranked = growth.rank(markets)
+    allocations = growth.allocate(budget, ranked)
+    mid_price = _price_result_for(route_code, start, data_dir)
+    lines = storyline.build_storyline(route_code, mid_price, allocations)
+
+    label = f"{route.origin_city or route.origin} \u2192 {route.destination_city or route.destination_market} ({route.code})"
+    period = f"{start.isoformat()} · {days_n} days · budget \u20ac{budget}"
+    svg = onepager_mod.build_onepager_svg(
+        route_label=label,
+        period=period,
+        days=priced,
+        markets=ranked,
+        allocations=allocations,
+        storyline=lines,
+    )
+    return 200, svg, "image/svg+xml"
+
+
 # --------------------------------------------------------------------------- #
 # AWS Lambda adapters (API Gateway proxy integration)
 # --------------------------------------------------------------------------- #
@@ -202,3 +265,23 @@ def lambda_growth(event, context=None):  # noqa: ANN001
 
 def lambda_storyline(event, context=None):  # noqa: ANN001
     return _run(get_storyline, event)
+
+
+def lambda_onepager(event, context=None):  # noqa: ANN001
+    params = event.get("queryStringParameters") or {}
+    try:
+        status, svg, content_type = get_onepager(params)
+        headers = {
+            "Content-Type": content_type,
+            "Access-Control-Allow-Origin": "*",
+        }
+        return {"statusCode": status, "headers": headers, "body": svg}
+    except BadRequest as exc:
+        return {
+            "statusCode": 400,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            },
+            "body": json.dumps({"error": str(exc)}),
+        }

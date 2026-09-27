@@ -72,6 +72,17 @@ This project demonstrates the Kiro University Challenge lessons. Full map in
 - **Custom agents** — `.kiro/agents/` (`travel-data-analyst`, `aws-infra-reviewer`)
 - **Power** — `power/` (`travel-growth-toolkit`: skill + MCP, packaged for reuse)
 
+## Highlights
+
+- **Deterministic core, proven by property tests.** Pricing and growth are pure functions;
+  invariants (price bounds, holiday/event never lower the price, allocations sum exactly)
+  are verified over hundreds of generated inputs — and over arbitrary rule configurations.
+- **Extensible by data, not code.** Pricing behaviour (seasonality bands, holiday boost,
+  event proximity) lives in `data/pricing-rules.json`. Add or tune a rule by editing data.
+- **Client one-pager artifact.** `GET /onepager` renders a fixed-layout, deterministic SVG
+  briefing (price chart + top growth markets + storyline) straight from the engine — the
+  report a consultant hands to a client.
+
 ## Running it
 
 ```

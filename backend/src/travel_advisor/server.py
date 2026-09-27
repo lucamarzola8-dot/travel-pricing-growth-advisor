@@ -41,14 +41,33 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "*")
         self.end_headers()
 
+    def _send_svg(self, svg: str) -> None:
+        payload = svg.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "image/svg+xml")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
+        raw = parse_qs(parsed.query)
+        params = {k: v[0] for k, v in raw.items()}
+
+        # SVG one-pager has a different content type.
+        if parsed.path == "/onepager":
+            try:
+                _status, svg, _ct = api.get_onepager(params)
+                self._send_svg(svg)
+            except api.BadRequest as exc:
+                self._send(400, {"error": str(exc)})
+            return
+
         handler = _ROUTES.get(parsed.path)
         if handler is None:
             self._send(404, {"error": f"unknown path: {parsed.path}"})
             return
-        raw = parse_qs(parsed.query)
-        params = {k: v[0] for k, v in raw.items()}
         try:
             status, body = handler(params)
         except api.BadRequest as exc:
@@ -62,9 +81,11 @@ class _Handler(BaseHTTPRequestHandler):
 def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
     server = ThreadingHTTPServer((host, port), _Handler)
     print(f"Travel Advisor API running on http://{host}:{port}")
+    print("  GET /routes")
     print("  GET /price?route=MXP-BCN&date=2026-03-02")
     print("  GET /growth?budget=100000")
     print("  GET /storyline?route=MXP-BCN&date=2026-03-02&budget=100000")
+    print("  GET /onepager?route=MXP-BCN&date=2026-03-01&days=14&budget=100000")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

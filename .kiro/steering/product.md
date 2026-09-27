@@ -31,6 +31,10 @@ sporting events) — into two outputs:
   optional add-on, never on the critical path.
 - **Business storyline is a first-class output**, not an afterthought — insights are written
   in language a non-technical decision-maker can act on.
+- **Curated, deterministic artifacts.** The client one-pager (a fixed-layout SVG built from
+  the same engine) is a first-class output: same inputs produce a byte-identical report.
+- **Extensible by data, not code.** Pricing behaviour lives in `data/pricing-rules.json`;
+  adding or changing a rule is a data edit, not a code change.
 
 ## Scope discipline (MVP)
 

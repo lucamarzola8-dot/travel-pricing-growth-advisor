@@ -119,6 +119,17 @@ class PricingRules:
 
 
 @dataclass(frozen=True)
+class PricedDay:
+    """A single day on the pricing calendar (for the one-pager / range views)."""
+
+    date: str
+    price: float
+    base: float
+    deltaPct: float
+    factors: tuple[Factor, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
 class MarketOpportunity:
     """A market's computed growth-opportunity score (>= 0)."""
 

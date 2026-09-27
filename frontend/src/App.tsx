@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { fetchGrowth, fetchPriceRange, fetchRoutes, fetchStoryline } from "./api";
+import {
+  fetchGrowth,
+  fetchPriceRange,
+  fetchRoutes,
+  fetchStoryline,
+  onePagerUrl,
+} from "./api";
 import type { GrowthResponse, PricedDay, RouteInfo } from "./types";
 import { PricingCalendar } from "./components/PricingCalendar";
 import { GrowthBoard } from "./components/GrowthBoard";
@@ -115,6 +121,15 @@ export function App() {
         <button className="primary" onClick={analyze} disabled={loading}>
           {loading ? "Analyzing…" : "Analyze"}
         </button>
+        <a
+          className="secondary"
+          href={onePagerUrl(route, start, days, budget)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open the client-ready one-pager (SVG) for the current selection"
+        >
+          Open one-pager
+        </a>
       </section>
 
       {error && <div className="error">Error: {error}</div>}

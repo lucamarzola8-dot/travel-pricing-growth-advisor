@@ -28,6 +28,22 @@ export function fetchRoutes(): Promise<RoutesResponse> {
   return getJson<RoutesResponse>("/routes");
 }
 
+/** URL of the deterministic SVG one-pager for the current selection. */
+export function onePagerUrl(
+  route: string,
+  date: string,
+  days: number,
+  budget: number
+): string {
+  const q = new URLSearchParams({
+    route,
+    date,
+    days: String(days),
+    budget: String(budget),
+  });
+  return `${BASE}/onepager?${q.toString()}`;
+}
+
 export function fetchPrice(route: string, date: string): Promise<PriceResponse> {
   return getJson<PriceResponse>(
     `/price?route=${encodeURIComponent(route)}&date=${encodeURIComponent(date)}`
