@@ -7,7 +7,7 @@ from decimal import Decimal
 
 from hypothesis import strategies as st
 
-from travel_advisor.models import Event, MarketOpportunity, Route
+from travel_advisor.models import Event, MarketOpportunity, PricingRules, Route
 
 
 @st.composite
@@ -36,6 +36,21 @@ def events_near(draw, travel_date: date) -> Event:
     offset = draw(st.integers(min_value=-3, max_value=3))
     impact = draw(st.floats(min_value=0.0, max_value=2.0, allow_nan=False, allow_infinity=False))
     return Event("XXX", travel_date + timedelta(days=offset), "Ev", impact)
+
+
+@st.composite
+def pricing_rules(draw) -> PricingRules:
+    """A valid arbitrary ruleset (non-negative boosts, sane multipliers)."""
+    months = st.integers(min_value=1, max_value=12)
+    return PricingRules(
+        peak_months=frozenset(draw(st.sets(months, max_size=4))),
+        peak_multiplier=draw(st.floats(min_value=1.0, max_value=2.0, allow_nan=False, allow_infinity=False)),
+        low_months=frozenset(draw(st.sets(months, max_size=4))),
+        low_multiplier=draw(st.floats(min_value=0.5, max_value=1.0, allow_nan=False, allow_infinity=False)),
+        shoulder_multiplier=draw(st.floats(min_value=0.8, max_value=1.2, allow_nan=False, allow_infinity=False)),
+        holiday_boost=draw(st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)),
+        proximity_days=draw(st.integers(min_value=0, max_value=7)),
+    )
 
 
 @st.composite

@@ -95,6 +95,30 @@ class PriceResult:
 
 
 @dataclass(frozen=True)
+class PricingRules:
+    """Tunable pricing rules, loaded from data (not hard-coded).
+
+    Adding or changing pricing behaviour is a data edit, not a code change.
+    ``holiday_boost`` and event impacts are applied as ``1 + boost`` and must be
+    ``>= 0`` so the corresponding factors never lower the pre-clamp price.
+    """
+
+    peak_months: frozenset[int] = frozenset({6, 7, 8, 12})
+    peak_multiplier: float = 1.20
+    low_months: frozenset[int] = frozenset({1, 2, 11})
+    low_multiplier: float = 0.90
+    shoulder_multiplier: float = 1.00
+    holiday_boost: float = 0.10
+    proximity_days: int = 3
+
+    def __post_init__(self) -> None:
+        if self.holiday_boost < 0:
+            raise ValueError("holiday_boost must be non-negative")
+        if self.proximity_days < 0:
+            raise ValueError("proximity_days must be non-negative")
+
+
+@dataclass(frozen=True)
 class MarketOpportunity:
     """A market's computed growth-opportunity score (>= 0)."""
 

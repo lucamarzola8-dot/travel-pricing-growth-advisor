@@ -1,0 +1,12 @@
+{
+  "description": "Tunable pricing rules for the dynamic pricing engine. Change pricing behaviour by editing data here, not by changing code. All multipliers for holiday/event are applied as (1 + boost) and are >= 1 so they never lower the pre-clamp price.",
+  "seasonality": {
+    "peak_months": [6, 7, 8, 12],
+    "peak_multiplier": 1.20,
+    "low_months": [1, 2, 11],
+    "low_multiplier": 0.90,
+    "shoulder_multiplier": 1.00
+  },
+  "holiday_boost": 0.10,
+  "proximity_days": 3
+}

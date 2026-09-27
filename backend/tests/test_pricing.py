@@ -85,6 +85,41 @@ def test_deterministic():
     assert a == b
 
 
+def test_rules_are_data_driven():
+    """A different (data-driven) ruleset deterministically changes the price."""
+    from travel_advisor.models import PricingRules
+
+    route = make_route()
+    # Default holiday boost is 0.10 -> 110.00; a custom 0.50 boost -> 150.00.
+    default = price_for(route, date(2026, 4, 15), holiday=True)
+    custom = price_for(
+        route,
+        date(2026, 4, 15),
+        holiday=True,
+        rules=PricingRules(holiday_boost=0.50),
+    )
+    assert default.price == Decimal("110.00")
+    assert custom.price == Decimal("150.00")
+
+
+def test_load_pricing_rules_defaults(tmp_path):
+    """Missing rules file falls back to defaults (deterministic)."""
+    from travel_advisor.data import load_pricing_rules
+    from travel_advisor.models import PricingRules
+
+    rules = load_pricing_rules(tmp_path)  # empty dir -> no file
+    assert rules == PricingRules()
+
+
+def test_load_pricing_rules_from_file():
+    from travel_advisor.data import load_pricing_rules
+
+    rules = load_pricing_rules()  # repo data/pricing-rules.json
+    assert rules.holiday_boost == 0.10
+    assert rules.proximity_days == 3
+    assert 6 in rules.peak_months
+
+
 def test_load_routes_and_get_route():
     routes = load_routes()
     assert "MXP-BCN" in routes

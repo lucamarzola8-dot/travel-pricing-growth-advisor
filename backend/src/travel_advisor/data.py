@@ -16,7 +16,7 @@ from pathlib import Path
 
 import holidays
 
-from .models import Event, Route
+from .models import Event, PricingRules, Route
 
 # Repo root is three parents up from this file: src/travel_advisor/data.py -> backend -> repo
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -74,6 +74,32 @@ def load_events(data_dir: str | Path | None = None) -> list[Event]:
             continue
         events.append(event)
     return events
+
+
+def load_pricing_rules(data_dir: str | Path | None = None) -> PricingRules:
+    """Load pricing rules from ``pricing-rules.json``.
+
+    Falls back to :class:`PricingRules` defaults if the file is missing or any
+    field is malformed, so the engine always has a valid, deterministic ruleset.
+    """
+    path = _data_dir(data_dir) / "pricing-rules.json"
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, ValueError):
+        return PricingRules()
+    try:
+        season = raw.get("seasonality", {})
+        return PricingRules(
+            peak_months=frozenset(int(m) for m in season.get("peak_months", [6, 7, 8, 12])),
+            peak_multiplier=float(season.get("peak_multiplier", 1.20)),
+            low_months=frozenset(int(m) for m in season.get("low_months", [1, 2, 11])),
+            low_multiplier=float(season.get("low_multiplier", 0.90)),
+            shoulder_multiplier=float(season.get("shoulder_multiplier", 1.00)),
+            holiday_boost=float(raw.get("holiday_boost", 0.10)),
+            proximity_days=int(raw.get("proximity_days", 3)),
+        )
+    except (KeyError, ValueError, TypeError):
+        return PricingRules()
 
 
 def get_route(code: str, data_dir: str | Path | None = None) -> Route:

@@ -78,9 +78,10 @@ def _price_result_for(route_code: str, travel_date: date, data_dir=None) -> Pric
     route = data.get_route(route_code, data_dir)  # raises UnknownRouteError
     events = data.events_for_market(data.load_events(data_dir), route.destination_market)
     holiday = data.is_holiday(route.destination_country, travel_date)
+    rules = data.load_pricing_rules(data_dir)
     from .pricing import price_for
 
-    return price_for(route, travel_date, holiday=holiday, events=events)
+    return price_for(route, travel_date, holiday=holiday, events=events, rules=rules)
 
 
 def get_routes(_params: dict[str, Any] | None = None, data_dir=None) -> tuple[int, dict[str, Any]]:
