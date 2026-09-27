@@ -112,5 +112,31 @@
     "date": "2026-05-15",
     "name": "San Isidro Festival",
     "impact": 0.20
-  }
+  },
+
+  { "market_code": "LIS", "date": "2026-10-06", "name": "Lisbon Design Week", "impact": 0.16 },
+  { "market_code": "CDG", "date": "2026-10-10", "name": "Nuit Blanche Paris", "impact": 0.19 },
+  { "market_code": "MAD", "date": "2026-10-12", "name": "Fiesta Nacional Weekend", "impact": 0.18 },
+  { "market_code": "BER", "date": "2026-10-03", "name": "German Unity Day", "impact": 0.17 },
+  { "market_code": "AMS", "date": "2026-10-21", "name": "Amsterdam Dance Event", "impact": 0.22 },
+  { "market_code": "FCO", "date": "2026-10-16", "name": "Rome Film Fest Opening", "impact": 0.15 },
+  { "market_code": "VIE", "date": "2026-10-26", "name": "Austrian National Day", "impact": 0.16 },
+
+  { "market_code": "LIS", "date": "2026-11-04", "name": "Web Summit", "impact": 0.36 },
+  { "market_code": "ATH", "date": "2026-11-17", "name": "Athens Marathon", "impact": 0.20 },
+  { "market_code": "PRG", "date": "2026-11-17", "name": "Freedom Day Weekend", "impact": 0.15 },
+  { "market_code": "DUB", "date": "2026-11-28", "name": "Dublin Winter Lights", "impact": 0.14 },
+
+  { "market_code": "BCN", "date": "2026-12-05", "name": "Barcelona Christmas Markets", "impact": 0.17 },
+  { "market_code": "VIE", "date": "2026-12-12", "name": "Vienna Christmas Markets", "impact": 0.24 },
+  { "market_code": "BER", "date": "2026-12-19", "name": "Berlin Christmas Markets", "impact": 0.20 },
+  { "market_code": "CDG", "date": "2026-12-31", "name": "Paris New Year", "impact": 0.30 },
+  { "market_code": "LHR", "date": "2026-12-31", "name": "London NYE Fireworks", "impact": 0.32 },
+  { "market_code": "MAD", "date": "2026-12-31", "name": "Puerta del Sol NYE", "impact": 0.28 },
+
+  { "market_code": "BCN", "date": "2027-02-22", "name": "Mobile World Congress 2027", "impact": 0.35 },
+  { "market_code": "VIE", "date": "2027-02-04", "name": "Vienna Opera Ball 2027", "impact": 0.21 },
+  { "market_code": "DUB", "date": "2027-03-17", "name": "St. Patrick's Day 2027", "impact": 0.34 },
+  { "market_code": "AMS", "date": "2027-04-27", "name": "King's Day 2027", "impact": 0.30 },
+  { "market_code": "LHR", "date": "2027-07-05", "name": "Wimbledon 2027 Finals", "impact": 0.26 }
 ]
