@@ -20,6 +20,7 @@ _ROUTES = {
     "/price": api.get_price,
     "/growth": api.get_growth,
     "/storyline": api.get_storyline,
+    "/simulate": api.get_simulate,
 }
 
 

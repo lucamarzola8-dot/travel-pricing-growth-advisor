@@ -143,6 +143,8 @@ class MarketAdData:
     demand_index: float
     cpc_eur: float
     margin_index: float
+    conversion_rate: float = 0.03
+    avg_booking_value_eur: float = 180.0
 
 
 @dataclass(frozen=True)

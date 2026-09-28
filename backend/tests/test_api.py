@@ -88,6 +88,40 @@ def test_get_growth_context_boosts_focused_market():
     assert any(m["focused"] for m in ctx["markets"])
 
 
+def test_get_growth_includes_outcomes_and_totals():
+    status, body = api.get_growth({"budget": "100000"})
+    assert status == 200
+    assert "totals" in body
+    t = body["totals"]
+    assert t["clicks"] > 0 and t["bookings"] > 0 and t["revenue"] > 0 and t["roas"] > 0
+    # each market row carries expected outcomes
+    for m in body["markets"]:
+        assert "clicks" in m and "bookings" in m and "revenue" in m
+
+
+def test_simulate_moves_budget_and_reports_delta():
+    status, body = api.get_simulate(
+        {"budget": "100000", "from": "LHR", "to": "LIS", "amount": "5000"}
+    )
+    assert status == 200
+    assert body["move"] == {"from": "LHR", "to": "LIS", "amount": "5000"}
+    assert "before" in body and "after" in body and "delta" in body
+    # moving to a higher-ROI market should not reduce revenue
+    assert body["delta"]["revenue"] >= 0
+
+
+def test_simulate_rejects_unknown_market():
+    with pytest.raises(api.BadRequest):
+        api.get_simulate({"budget": "100000", "from": "LHR", "to": "ZZZ", "amount": "100"})
+
+
+def test_simulate_rejects_over_move():
+    with pytest.raises(api.BadRequest):
+        api.get_simulate(
+            {"budget": "100000", "from": "LHR", "to": "LIS", "amount": "999999"}
+        )
+
+
 def test_get_growth_negative_budget():
     with pytest.raises(api.BadRequest):
         api.get_growth({"budget": "-5"})

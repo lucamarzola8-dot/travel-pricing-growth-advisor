@@ -54,6 +54,63 @@ def test_normalize_interest_edge_cases():
     assert normalize_interest({"A": -10.0, "B": 20.0}) == {"A": 0, "B": 100}
 
 
+def test_expected_outcome_computes_clicks_bookings_revenue():
+    from travel_advisor.growth import expected_outcome
+
+    # €1000 at €1.00 CPC -> 1000 clicks; 3% conv -> 30 bookings; €200 AOV -> €6000
+    out = expected_outcome(Decimal("1000"), cpc_eur=1.0, conversion_rate=0.03, avg_booking_value_eur=200.0)
+    assert out["clicks"] == 1000.0
+    assert round(out["bookings"], 1) == 30.0
+    assert round(out["revenue"], 2) == 6000.0
+
+
+def test_expected_outcome_monotonic_and_non_negative():
+    from travel_advisor.growth import expected_outcome
+
+    small = expected_outcome(Decimal("100"), 0.8, 0.03, 180.0)
+    big = expected_outcome(Decimal("500"), 0.8, 0.03, 180.0)
+    assert big["revenue"] > small["revenue"]
+    zero = expected_outcome(Decimal("0"), 0.8, 0.03, 180.0)
+    assert zero["clicks"] == 0.0 and zero["revenue"] == 0.0
+
+
+def test_saturation_allocation_sums_to_budget():
+    from travel_advisor.growth import allocate_with_saturation
+    from travel_advisor.models import MarketOpportunity
+
+    markets = [
+        MarketOpportunity("A", 200.0),
+        MarketOpportunity("B", 150.0),
+        MarketOpportunity("C", 100.0),
+    ]
+    allocs = allocate_with_saturation(Decimal("100000.00"), markets)
+    assert sum(a.amount for a in allocs) == Decimal("100000.00")
+    assert all(a.amount >= 0 for a in allocs)
+
+
+def test_saturation_marginal_decreases_vs_linear():
+    """Under diminishing returns, the top market gets a smaller share than a flat
+    proportional split would give it (budget spreads out)."""
+    from travel_advisor.growth import allocate, allocate_with_saturation
+    from travel_advisor.models import MarketOpportunity
+
+    markets = [MarketOpportunity("A", 300.0), MarketOpportunity("B", 100.0)]
+    linear = {a.market: a.amount for a in allocate(Decimal("100000"), markets)}
+    sat = {a.market: a.amount for a in allocate_with_saturation(Decimal("100000"), markets)}
+    # Saturation gives the top market less than the pure proportional split.
+    assert sat["A"] < linear["A"]
+    assert sat["B"] > linear["B"]
+
+
+def test_saturation_all_zero_scores_falls_back():
+    from travel_advisor.growth import allocate_with_saturation
+    from travel_advisor.models import MarketOpportunity
+
+    markets = [MarketOpportunity("A", 0.0), MarketOpportunity("B", 0.0)]
+    allocs = allocate_with_saturation(Decimal("100.00"), markets)
+    assert sum(a.amount for a in allocs) == Decimal("100.00")
+
+
 def test_ad_breakdown_channels_sum_to_amount():
     from travel_advisor.data import ad_breakdown
 

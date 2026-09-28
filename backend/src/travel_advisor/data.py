@@ -97,6 +97,8 @@ def load_markets(data_dir: str | Path | None = None) -> dict[str, MarketAdData]:
                 demand_index=float(rec["demand_index"]),
                 cpc_eur=float(rec["cpc_eur"]),
                 margin_index=float(rec["margin_index"]),
+                conversion_rate=float(rec.get("conversion_rate", 0.03)),
+                avg_booking_value_eur=float(rec.get("avg_booking_value_eur", 180.0)),
             )
         except (KeyError, ValueError, TypeError):
             continue

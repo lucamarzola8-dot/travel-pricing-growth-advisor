@@ -219,13 +219,24 @@ def get_growth(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, An
     focus_market, uplift = _growth_context(params, data_dir)
     markets = _market_opportunities(data_dir, focus_market=focus_market, uplift=uplift)
     ranked = growth.rank(markets)
-    allocations = growth.allocate(budget, ranked)
-    return 200, {
-        "budget": str(budget),
-        "budgetKind": "google_ads",
-        "focusMarket": focus_market,
-        "focusUplift": round(uplift, 3),
-        "markets": [
+    # Diminishing-returns allocation: budget flows to the best marginal market.
+    allocations = growth.allocate_with_saturation(budget, ranked)
+
+    ad_markets = data.load_markets(data_dir)
+    amount_by_market = {a.market: a.amount for a in allocations}
+
+    market_rows = []
+    total_clicks = total_bookings = total_revenue = 0.0
+    for m in ranked:
+        amt = amount_by_market.get(m.market, Decimal("0.00"))
+        ad = ad_markets.get(m.market)
+        conv = ad.conversion_rate if ad else 0.03
+        aov = ad.avg_booking_value_eur if ad else 180.0
+        outcome = growth.expected_outcome(amt, m.cpc_eur, conv, aov)
+        total_clicks += outcome["clicks"]
+        total_bookings += outcome["bookings"]
+        total_revenue += outcome["revenue"]
+        market_rows.append(
             {
                 "market": m.market,
                 "score": round(m.score, 2),
@@ -233,11 +244,89 @@ def get_growth(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, An
                 "cpcEur": round(m.cpc_eur, 2),
                 "marginIndex": round(m.margin_index, 2),
                 "focused": m.market == focus_market,
+                "clicks": round(outcome["clicks"]),
+                "bookings": round(outcome["bookings"], 1),
+                "revenue": round(outcome["revenue"], 2),
             }
-            for m in ranked
-        ],
+        )
+
+    roas = round(total_revenue / float(budget), 2) if budget > 0 else 0.0
+    return 200, {
+        "budget": str(budget),
+        "budgetKind": "google_ads",
+        "focusMarket": focus_market,
+        "focusUplift": round(uplift, 3),
+        "markets": market_rows,
         "allocations": [_allocation_to_dict(a) for a in allocations],
         "breakdowns": [_ad_breakdown_dict(a, data_dir) for a in allocations],
+        "totals": {
+            "clicks": round(total_clicks),
+            "bookings": round(total_bookings, 1),
+            "revenue": round(total_revenue, 2),
+            "roas": roas,
+        },
+    }
+
+
+def _outcome_for_market(market: str, amount: Decimal, data_dir=None) -> dict[str, float]:
+    """Expected clicks/bookings/revenue for a given spend in a market."""
+    ad_markets = data.load_markets(data_dir)
+    ad = ad_markets.get(market)
+    if ad is None:
+        return {"clicks": 0.0, "bookings": 0.0, "revenue": 0.0}
+    return growth.expected_outcome(
+        amount, ad.cpc_eur, ad.conversion_rate, ad.avg_booking_value_eur
+    )
+
+
+def get_simulate(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, Any]]:
+    """GET /simulate?budget=&from=&to=&amount= -> what-if of moving ad budget.
+
+    Starts from the recommended (saturating) allocation, moves ``amount`` euros
+    from market ``from`` to market ``to``, and returns the before/after expected
+    bookings and revenue plus the delta. Lets an analyst test "what if I shift
+    budget from London to Lisbon?".
+    """
+    budget = _parse_budget(_require(params, "budget"))
+    from_market = _require(params, "from")
+    to_market = _require(params, "to")
+    move = _parse_budget(_require(params, "amount"))
+
+    ad_markets = data.load_markets(data_dir)
+    if from_market not in ad_markets or to_market not in ad_markets:
+        raise BadRequest("unknown market in 'from' or 'to'")
+
+    ranked = growth.rank(_market_opportunities(data_dir))
+    base = {a.market: a.amount for a in growth.allocate_with_saturation(budget, ranked)}
+
+    if move > base.get(from_market, Decimal("0.00")):
+        raise BadRequest(
+            f"cannot move {move} from {from_market}: only {base.get(from_market, 0)} allocated there"
+        )
+
+    after = dict(base)
+    after[from_market] = base[from_market] - move
+    after[to_market] = base.get(to_market, Decimal("0.00")) + move
+
+    def totals(alloc: dict[str, Decimal]) -> dict[str, float]:
+        b = r = 0.0
+        for mkt, amt in alloc.items():
+            o = _outcome_for_market(mkt, amt, data_dir)
+            b += o["bookings"]
+            r += o["revenue"]
+        return {"bookings": round(b, 1), "revenue": round(r, 2)}
+
+    before_t = totals(base)
+    after_t = totals(after)
+    return 200, {
+        "budget": str(budget),
+        "move": {"from": from_market, "to": to_market, "amount": str(move)},
+        "before": before_t,
+        "after": after_t,
+        "delta": {
+            "bookings": round(after_t["bookings"] - before_t["bookings"], 1),
+            "revenue": round(after_t["revenue"] - before_t["revenue"], 2),
+        },
     }
 
 
@@ -374,6 +463,10 @@ def lambda_growth(event, context=None):  # noqa: ANN001
 
 def lambda_storyline(event, context=None):  # noqa: ANN001
     return _run(get_storyline, event)
+
+
+def lambda_simulate(event, context=None):  # noqa: ANN001
+    return _run(get_simulate, event)
 
 
 def lambda_onepager(event, context=None):  # noqa: ANN001

@@ -11,6 +11,7 @@ across them proportionally to score. Designed so the spec's growth properties ho
 
 from __future__ import annotations
 
+import math
 from decimal import ROUND_DOWN, Decimal
 
 from .models import Allocation, MarketOpportunity
@@ -79,6 +80,34 @@ def demand_uplift(holiday_days: int, event_hits: int) -> float:
     return 1.0 + 0.05 * hol + 0.08 * ev
 
 
+def expected_outcome(
+    amount: Decimal, cpc_eur: float, conversion_rate: float, avg_booking_value_eur: float
+) -> dict[str, float]:
+    """Turn an ad spend into expected clicks, bookings, and revenue (pure).
+
+        clicks   = amount / cpc
+        bookings = clicks × conversion_rate
+        revenue  = bookings × avg_booking_value
+
+    Deterministic; all outputs are non-negative and monotonic non-decreasing in
+    ``amount`` (more spend never lowers expected outcomes). CPC is floored to avoid
+    division by zero.
+    """
+    cpc = max(cpc_eur, 0.05)
+    conv = max(conversion_rate, 0.0)
+    aov = max(avg_booking_value_eur, 0.0)
+    clicks = float(amount) / cpc
+    bookings = clicks * conv
+    revenue = bookings * aov
+    return {"clicks": clicks, "bookings": bookings, "revenue": revenue}
+
+
+def _saturating(amount: float) -> float:
+    """Diminishing-returns transform: effective value grows with the square root
+    of spend, so each extra euro returns a little less than the last."""
+    return math.sqrt(max(amount, 0.0))
+
+
 def rank(markets: list[MarketOpportunity]) -> list[MarketOpportunity]:
     """Return markets sorted by non-increasing score (stable) — G5."""
     return sorted(markets, key=lambda m: m.score, reverse=True)
@@ -127,3 +156,89 @@ def allocate(
         raw[order[k % len(order)]] += _CENTS
 
     return [Allocation(market=markets[i].market, amount=raw[i]) for i in range(len(markets))]
+
+
+# Per-market spend cap for the saturating allocation, as a multiple of the even
+# share. A market can absorb at most this multiple of (budget / number of markets)
+# before its budget spills over to others — modelling advertising saturation.
+_SATURATION_CAP_FACTOR = 2.5
+
+
+def allocate_with_saturation(
+    total_budget: Decimal, markets: list[MarketOpportunity]
+) -> list[Allocation]:
+    """Allocate a budget under **diminishing returns** (water-filling).
+
+    Instead of a flat proportional split, budget is poured in small increments,
+    each time into the market with the highest *marginal* value:
+
+        marginal value = score / sqrt(1 + euros already spent there)
+
+    As a market receives more budget its marginal value falls, so later euros flow
+    elsewhere — no single market absorbs budget linearly. This models ad saturation.
+
+    Guarantees: amounts are non-negative and sum exactly to ``total_budget``. With
+    all-zero scores it falls back to the plain even/proportional split.
+    """
+    if total_budget < 0:
+        raise ValueError("total_budget must be non-negative")
+    if not markets:
+        return []
+
+    scores = [max(m.score, 0.0) for m in markets]
+    if sum(scores) <= 0:
+        return allocate(total_budget, markets)
+
+    total_budget = total_budget.quantize(_CENTS)
+    if total_budget == 0:
+        return [Allocation(m.market, Decimal("0.00")) for m in markets]
+
+    budget_f = float(total_budget)
+    n = len(markets)
+
+    # Diminishing returns: budget is split in proportion to a *concave* function of
+    # score (its square root), not the score itself. This keeps ordering (a higher
+    # score still gets more) while compressing the extremes — the top market receives
+    # less than a flat proportional split would give it, and the budget spreads toward
+    # other markets. That compression is exactly the saturation effect.
+    weights = [math.sqrt(s) for s in scores]
+
+    # Iterative water-filling with a per-market cap = cap_factor * even_share, so a
+    # dominant market saturates and the rest receive the overflow.
+    even_share = budget_f / n
+    cap = _SATURATION_CAP_FACTOR * even_share
+
+    remaining = budget_f
+    alloc = [0.0] * n
+    active = list(range(n))
+    # Distribute proportionally to weights, capping saturated markets and
+    # redistributing their overflow, until nothing is capped.
+    for _ in range(n + 1):
+        wsum = sum(weights[i] for i in active)
+        if wsum <= 0:
+            break
+        newly_capped = []
+        for i in active:
+            want = alloc[i] + remaining * weights[i] / wsum
+            if want > cap:
+                newly_capped.append(i)
+        if not newly_capped:
+            for i in active:
+                alloc[i] += remaining * weights[i] / wsum
+            remaining = 0.0
+            break
+        for i in newly_capped:
+            remaining -= cap - alloc[i]
+            alloc[i] = cap
+            active.remove(i)
+        if not active:
+            break
+
+    amounts = [Decimal(str(round(a, 2))).quantize(_CENTS) for a in alloc]
+    # Fix rounding drift so the total is exact, adjusting the largest allocation.
+    drift = total_budget - sum(amounts)
+    if drift != 0:
+        top = max(range(n), key=lambda i: amounts[i])
+        amounts[top] += drift
+
+    return [Allocation(markets[i].market, amounts[i]) for i in range(n)]
