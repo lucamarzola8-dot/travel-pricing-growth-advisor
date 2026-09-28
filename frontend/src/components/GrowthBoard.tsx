@@ -35,6 +35,34 @@ export function GrowthBoard({ growth }: Props) {
         markets by ROI of ad spend — demand × margin ÷ cost-per-click.
       </p>
       {boosted && <p className="note">{boosted}</p>}
+
+      {growth.totals && (
+        <div className="totals">
+          <div className="totals-item">
+            <span className="totals-value">
+              {growth.totals.clicks.toLocaleString()}
+            </span>
+            <span className="totals-label">expected clicks</span>
+          </div>
+          <div className="totals-item">
+            <span className="totals-value">
+              {growth.totals.bookings.toLocaleString()}
+            </span>
+            <span className="totals-label">expected bookings</span>
+          </div>
+          <div className="totals-item">
+            <span className="totals-value">
+              €{growth.totals.revenue.toLocaleString()}
+            </span>
+            <span className="totals-label">expected revenue</span>
+          </div>
+          <div className="totals-item">
+            <span className="totals-value">{growth.totals.roas}×</span>
+            <span className="totals-label">ROAS</span>
+          </div>
+        </div>
+      )}
+
       <p className="muted">Click a market to see where its ad budget goes.</p>
       <table className="board">
         <thead>
@@ -44,6 +72,8 @@ export function GrowthBoard({ growth }: Props) {
             <th>CPC</th>
             <th>ROI score</th>
             <th>Ad budget</th>
+            <th>Bookings</th>
+            <th>Revenue</th>
             <th></th>
           </tr>
         </thead>
@@ -68,6 +98,8 @@ export function GrowthBoard({ growth }: Props) {
                   <td>€{m.cpcEur.toFixed(2)}</td>
                   <td>{m.score.toFixed(1)}</td>
                   <td>€{amount.toLocaleString()}</td>
+                  <td>{m.bookings.toLocaleString()}</td>
+                  <td>€{m.revenue.toLocaleString()}</td>
                   <td className="bar-cell">
                     <div
                       className="bar"
@@ -77,7 +109,7 @@ export function GrowthBoard({ growth }: Props) {
                 </tr>
                 {isOpen && bd && (
                   <tr className="detail">
-                    <td colSpan={6}>
+                    <td colSpan={8}>
                       <div className="breakdown">
                         <div className="breakdown-col">
                           <h4>Spend by channel</h4>

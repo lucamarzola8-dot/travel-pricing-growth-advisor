@@ -3,6 +3,7 @@ import type {
   PriceResponse,
   PricedDay,
   RoutesResponse,
+  SimulateResponse,
   StorylineResponse,
 } from "./types";
 
@@ -26,6 +27,21 @@ async function getJson<T>(path: string): Promise<T> {
 
 export function fetchRoutes(): Promise<RoutesResponse> {
   return getJson<RoutesResponse>("/routes");
+}
+
+export function fetchSimulate(
+  budget: number,
+  from: string,
+  to: string,
+  amount: number
+): Promise<SimulateResponse> {
+  const q = new URLSearchParams({
+    budget: String(budget),
+    from,
+    to,
+    amount: String(amount),
+  });
+  return getJson<SimulateResponse>(`/simulate?${q.toString()}`);
 }
 
 /** URL of the deterministic SVG one-pager for the current selection. */

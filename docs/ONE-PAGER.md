@@ -58,9 +58,10 @@ St. Patrick's Day, +47%) is visible before it happens.
 
 ### 3. Google Ads allocation by ROI
 For every market the tool computes an opportunity score as **search demand × (1 + booking
-margin) ÷ cost-per-click**. A budget is then split proportionally to score. Because CPC is in
-the denominator, an expensive market (e.g. London) can rank below a cheaper, high-margin one
-(e.g. Lisbon): the budget follows return on spend, not popularity.
+margin) ÷ cost-per-click**. The budget is then allocated by that score (under diminishing
+returns — see feature 6). Because CPC is in the denominator, an expensive market (e.g.
+London) can rank below a cheaper, high-margin one (e.g. Lisbon): the budget follows return on
+spend, not popularity.
 
 ### 4. Ad spend breakdown
 Each market's allocation is broken down by channel (Search / Performance Max / YouTube) and
@@ -78,12 +79,23 @@ When a route and period are analysed, the holidays and events that raise its far
 **demand-boost that market** in the ad allocation. A spike in the pricing calendar pushes the
 same market up the ad ranking — one signal driving both decisions.
 
-### 6. Client storyline & one-pager
+### 6. Expected revenue & diminishing returns
+Each market's spend is turned into expected clicks, bookings, and revenue, with a blended
+return-on-ad-spend (ROAS) for the whole budget. Allocation follows diminishing returns — a
+concave function of score with a saturation cap — so no market absorbs budget linearly and
+spend spreads to where the next euro returns most.
+
+### 7. What-if simulator
+Move budget between markets and instantly see the change in expected bookings and revenue
+(e.g. "shift €5k from London to Lisbon → +127 bookings, +€22.8k"). This is the strategic
+conversation a growth consultant has with a client.
+
+### 8. Client storyline & one-pager
 The tool writes the key insights as plain-language sentences and renders a fixed-layout,
 **deterministic** SVG briefing (identical inputs → byte-identical report) — the document a
 consultant hands to a client.
 
-### 7. Real-data ready
+### 9. Real-data ready
 Signals ship as realistic seed data and are swappable with live sources: the demand index can
 be refreshed from **Google Trends**, and CPC/keywords map to the **Google Ads API**. The app
 stays offline-first — enrichment updates the seed, never the request path.

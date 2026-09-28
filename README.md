@@ -140,6 +140,16 @@ events that raise its fares also **demand-boost that market** in the ads allocat
 St. Patrick's Day) pushes that market up the ads ranking — one coherent signal → price →
 ad-ROI story.
 
+**Expected outcomes & diminishing returns.** Each market's allocation is turned into
+expected **clicks → bookings → revenue** (`spend ÷ CPC × conversion rate × average booking
+value`), with budget totals and a blended **ROAS**. Budget is allocated under **diminishing
+returns**: it follows a concave function of score with a per-market saturation cap, so the
+top market gets less than a flat split and spend spreads — no market absorbs budget linearly.
+
+**What-if simulator.** `GET /simulate` moves budget between markets and returns the
+before/after and delta in expected bookings and revenue — e.g. "shift €5k from London to
+Lisbon → +127 bookings, +€22.8k revenue." The dashboard exposes this as an interactive panel.
+
 **Where the ad budget goes.** Each market's allocation is broken down by channel
 (Search / Performance Max / YouTube) and shown with example keywords and their CPC
 (`data/ad-channels.json`), so "allocate €X to Lisbon" becomes concrete: how much on each
@@ -171,6 +181,7 @@ in `infra/` and are validated with `cdk synth` — no credentials or live deploy
 | `GET /routes` | available routes with city labels (`Milan → Barcelona (MXP-BCN)`) |
 | `GET /price?route=&date=` | recommended price + the ordered factors behind it |
 | `GET /growth?budget=` | markets ranked by opportunity + budget allocation |
+| `GET /simulate?budget=&from=&to=&amount=` | what-if: move budget between markets, get the delta in bookings/revenue |
 | `GET /storyline?route=&date=&budget=` | business-language insights |
 | `GET /onepager?route=&date=&days=&budget=` | deterministic SVG client briefing |
 

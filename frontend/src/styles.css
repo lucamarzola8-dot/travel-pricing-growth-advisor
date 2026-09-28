@@ -227,6 +227,102 @@ a.secondary:hover {
   background: #b45309;
 }
 
+/* Totals banner */
+.totals {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.totals-item {
+  flex: 1;
+  min-width: 120px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.totals-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.totals-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* What-if simulator */
+.whatif-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin: 8px 0 12px;
+}
+
+.whatif-controls label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: var(--muted);
+  gap: 6px;
+}
+
+.whatif-controls select,
+.whatif-controls input {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.whatif-result {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 8px;
+}
+
+.whatif-deltas {
+  display: flex;
+  gap: 16px;
+  margin: 10px 0;
+}
+
+.delta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.delta-value {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.delta.up .delta-value {
+  color: #34d399;
+}
+
+.delta.down .delta-value {
+  color: #f87171;
+}
+
+.delta-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* Growth board */
 .board {
   width: 100%;

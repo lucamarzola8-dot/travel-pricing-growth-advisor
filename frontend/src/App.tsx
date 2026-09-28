@@ -10,6 +10,7 @@ import type { GrowthResponse, PricedDay, RouteInfo } from "./types";
 import { PricingCalendar } from "./components/PricingCalendar";
 import { GrowthBoard } from "./components/GrowthBoard";
 import { Storyline } from "./components/Storyline";
+import { WhatIf } from "./components/WhatIf";
 
 // Fallback labels if the API is unreachable, so the selector is never empty.
 const FALLBACK_ROUTES: RouteInfo[] = [
@@ -174,6 +175,14 @@ export function App() {
           <section className="panel wide">
             <h2>Ads growth allocation</h2>
             <GrowthBoard growth={growth} />
+          </section>
+
+          <section className="panel wide">
+            <h2>What-if simulator</h2>
+            <WhatIf
+              budget={budget}
+              markets={growth ? growth.markets.map((m) => m.market) : []}
+            />
           </section>
 
           <section className="panel wide">

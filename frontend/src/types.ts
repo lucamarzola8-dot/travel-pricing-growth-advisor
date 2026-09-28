@@ -19,6 +19,24 @@ export interface MarketScore {
   cpcEur: number;
   marginIndex: number;
   focused: boolean;
+  clicks: number;
+  bookings: number;
+  revenue: number;
+}
+
+export interface GrowthTotals {
+  clicks: number;
+  bookings: number;
+  revenue: number;
+  roas: number;
+}
+
+export interface SimulateResponse {
+  budget: string;
+  move: { from: string; to: string; amount: string };
+  before: { bookings: number; revenue: number };
+  after: { bookings: number; revenue: number };
+  delta: { bookings: number; revenue: number };
 }
 
 export interface AllocationItem {
@@ -51,6 +69,7 @@ export interface GrowthResponse {
   markets: MarketScore[];
   allocations: AllocationItem[];
   breakdowns?: AdBreakdown[];
+  totals?: GrowthTotals;
 }
 
 export interface StorylineResponse {
