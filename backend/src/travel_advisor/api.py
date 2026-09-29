@@ -18,7 +18,13 @@ from decimal import Decimal
 from typing import Any
 
 from . import data, growth, storyline
-from .models import Allocation, MarketOpportunity, PriceResult, PricedDay
+from .models import (
+    Allocation,
+    MarketOpportunity,
+    PriceResult,
+    PricedDay,
+    RevenueOptimization,
+)
 
 
 class BadRequest(ValueError):
@@ -29,21 +35,69 @@ class BadRequest(ValueError):
 # Serialization helpers
 # --------------------------------------------------------------------------- #
 
+def _factors_to_list(factors) -> list[dict[str, Any]]:
+    return [
+        {"kind": f.kind, "multiplier": round(f.multiplier, 4), "reason": f.reason}
+        for f in factors
+    ]
+
+
+def _breakdown_to_list(result: PriceResult) -> list[dict[str, Any]]:
+    from .pricing import price_breakdown
+
+    return [
+        {
+            "kind": b.kind,
+            "reason": b.reason,
+            "multiplier": round(b.multiplier, 4),
+            "contributionEur": str(b.contribution_eur),
+            "contributionPct": round(b.contribution_pct, 2),
+        }
+        for b in price_breakdown(result)
+    ]
+
+
 def _price_to_dict(route_code: str, result: PriceResult) -> dict[str, Any]:
     return {
         "route": route_code,
         "price": str(result.price),
         "base": str(result.base),
         "deltaPct": round(result.delta_pct, 2),
-        "factors": [
-            {"kind": f.kind, "multiplier": round(f.multiplier, 4), "reason": f.reason}
-            for f in result.factors
-        ],
+        "factors": _factors_to_list(result.factors),
+        "breakdown": _breakdown_to_list(result),
     }
 
 
 def _allocation_to_dict(a: Allocation) -> dict[str, Any]:
     return {"market": a.market, "amount": str(a.amount)}
+
+
+def _optimization_to_dict(
+    route_code: str, opt: RevenueOptimization, base: Decimal, travel_date: date
+) -> dict[str, Any]:
+    rule_result = PriceResult(price=opt.recommended, base=base, factors=opt.factors)
+    return {
+        "route": route_code,
+        "date": travel_date.isoformat(),
+        "optimalPrice": str(opt.optimal_price),
+        "unconstrainedPrice": str(opt.unconstrained_price),
+        "capacityConstrained": opt.capacity_constrained,
+        "seats": opt.seats,
+        "loadFactor": round(opt.load_factor, 4),
+        "expectedDemand": round(opt.expected_demand, 2),
+        "expectedRevenue": str(opt.expected_revenue),
+        "expectedProfit": str(opt.expected_profit),
+        "marginalCost": str(opt.marginal_cost),
+        "recommended": str(opt.recommended),
+        "recommendedRevenue": str(opt.recommended_revenue),
+        "recommendedProfit": str(opt.recommended_profit),
+        "upliftPct": round(opt.uplift_pct, 2),
+        "demandMultiplier": round(opt.demand_multiplier, 4),
+        "elasticity": opt.elasticity,
+        "segment": opt.segment,
+        "factors": _factors_to_list(opt.factors),
+        "breakdown": _breakdown_to_list(rule_result),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -81,6 +135,8 @@ def _price_result_for(route_code: str, travel_date: date, data_dir=None) -> Pric
     rules = data.load_pricing_rules(data_dir)
     from .pricing import price_for
 
+    # reference_date intentionally omitted: the user picks a departure date to
+    # inspect, not a booking horizon, so no advance-purchase premium applies.
     return price_for(route, travel_date, holiday=holiday, events=events, rules=rules)
 
 
@@ -118,6 +174,55 @@ def get_price(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, Any
     except data.UnknownRouteError as exc:
         raise BadRequest(str(exc)) from exc
     return 200, _price_to_dict(route_code, result)
+
+
+def _parse_days(params: dict[str, Any], default: int = 1) -> int:
+    raw = params.get("days")
+    if raw is None or raw == "":
+        return default
+    try:
+        days_n = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise BadRequest(f"invalid days: {raw!r}") from exc
+    if not 1 <= days_n <= 31:
+        raise BadRequest("days must be between 1 and 31")
+    return days_n
+
+
+def get_optimize(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, Any]]:
+    """GET /optimize?route=&date=[&days=N] -> profit-maximising price(s).
+
+    Returns the elasticity- and capacity-optimised price alongside the rule-based
+    recommended price, with expected demand/revenue/profit for each, so the client
+    can show the uplift and whether seat capacity forced peak pricing. With
+    ``days`` it returns one entry per day starting at ``date`` (for the calendar)
+    in a single round trip.
+    """
+    route_code = _require(params, "route")
+    start = _parse_date(_require(params, "date"))
+    days_n = _parse_days(params)
+    from datetime import timedelta
+
+    from . import demand as demand_mod
+
+    try:
+        route = data.get_route(route_code, data_dir)
+    except data.UnknownRouteError as exc:
+        raise BadRequest(str(exc)) from exc
+
+    events = data.events_for_market(data.load_events(data_dir), route.destination_market)
+    rules = data.load_pricing_rules(data_dir)
+
+    entries: list[dict[str, Any]] = []
+    for i in range(days_n):
+        d = start + timedelta(days=i)
+        holiday = data.is_holiday(route.destination_country, d)
+        opt = demand_mod.optimize_price(route, d, holiday=holiday, events=events, rules=rules)
+        entries.append(_optimization_to_dict(route_code, opt, route.base_fare, d))
+
+    if "days" not in params or params.get("days") in (None, ""):
+        return 200, entries[0]
+    return 200, {"route": route_code, "days": entries}
 
 
 def _period_demand_uplift(
@@ -345,24 +450,105 @@ def _ad_breakdown_dict(a: Allocation, data_dir=None) -> dict[str, Any]:
     }
 
 
+def _optimize_period(route, start: date, days_n: int, data_dir=None):
+    """Run the profit optimiser for each day of the period (shared helper)."""
+    from datetime import timedelta
+
+    from . import demand as demand_mod
+
+    events = data.events_for_market(data.load_events(data_dir), route.destination_market)
+    rules = data.load_pricing_rules(data_dir)
+    out = []
+    for i in range(days_n):
+        d = start + timedelta(days=i)
+        holiday = data.is_holiday(route.destination_country, d)
+        out.append(
+            (d, demand_mod.optimize_price(route, d, holiday=holiday, events=events, rules=rules))
+        )
+    return out, rules
+
+
+def _route_label(route) -> str:
+    return (
+        f"{route.origin_city or route.origin} \u2192 "
+        f"{route.destination_city or route.destination_market} ({route.code})"
+    )
+
+
+def _insight_to_dict(ins: storyline.Insight) -> dict[str, Any]:
+    return {
+        "kind": ins.kind,
+        "insight": ins.insight,
+        "action": ins.action,
+        "evidence": ins.evidence,
+    }
+
+
 def get_storyline(params: dict[str, Any], data_dir=None) -> tuple[int, dict[str, Any]]:
-    """GET /storyline?route=&date=&budget= -> business-language insights."""
+    """GET /storyline?route=&date=&budget=[&days=] -> insights + advisor actions.
+
+    ``storyline`` keeps the original descriptive lines; ``advisor`` adds
+    insight/action/evidence triples derived from the period's profit optimisation
+    and the data-driven rules (req 4.1-4.3).
+    """
     route_code = _require(params, "route")
     travel_date = _parse_date(_require(params, "date"))
     budget = _parse_budget(_require(params, "budget"))
+    days_n = _parse_days(params, default=14)
     try:
+        route = data.get_route(route_code, data_dir)
         price = _price_result_for(route_code, travel_date, data_dir)
     except data.UnknownRouteError as exc:
         raise BadRequest(str(exc)) from exc
-    focus_market, uplift = _period_demand_uplift(
-        route_code, travel_date, int(params.get("days", 14)) if str(params.get("days", "")).isdigit() else 14, data_dir
-    )
+    focus_market, uplift = _period_demand_uplift(route_code, travel_date, days_n, data_dir)
     ranked = growth.rank(
         _market_opportunities(data_dir, focus_market=focus_market, uplift=uplift)
     )
     allocations = growth.allocate(budget, ranked)
     lines = storyline.build_storyline(route_code, price, allocations)
-    return 200, {"route": route_code, "storyline": lines}
+
+    period, rules = _optimize_period(route, travel_date, days_n, data_dir)
+    advisor = storyline.advisor_insights(_route_label(route), period, rules)
+    return 200, {
+        "route": route_code,
+        "storyline": lines,
+        "advisor": [_insight_to_dict(i) for i in advisor],
+    }
+
+
+def get_report(params: dict[str, Any], data_dir=None) -> tuple[int, str, str]:
+    """GET /report?route=&date=&days=&budget= -> Markdown one-pager.
+
+    Returns (status, markdown, content_type). A consulting-style export of the
+    same numbers the dashboard shows: headline, recommendations, day table,
+    budget split. Deterministic.
+    """
+    route_code = _require(params, "route")
+    start = _parse_date(_require(params, "date"))
+    budget = _parse_budget(_require(params, "budget"))
+    days_n = _parse_days(params, default=14)
+    try:
+        route = data.get_route(route_code, data_dir)
+    except data.UnknownRouteError as exc:
+        raise BadRequest(str(exc)) from exc
+
+    period, rules = _optimize_period(route, start, days_n, data_dir)
+    insights = storyline.advisor_insights(_route_label(route), period, rules)
+    focus_market, uplift = _period_demand_uplift(route_code, start, days_n, data_dir)
+    ranked = growth.rank(
+        _market_opportunities(data_dir, focus_market=focus_market, uplift=uplift)
+    )
+    allocations = growth.allocate(budget, ranked)
+    md = storyline.render_markdown_report(
+        route_label=_route_label(route),
+        start=start,
+        days=period,
+        insights=insights,
+        allocations=allocations,
+        budget=budget,
+        rules=rules,
+    )
+    return 200, md, "text/markdown; charset=utf-8"
 
 
 def get_onepager(params: dict[str, Any], data_dir=None) -> tuple[int, str, str]:
@@ -377,12 +563,7 @@ def get_onepager(params: dict[str, Any], data_dir=None) -> tuple[int, str, str]:
     route_code = _require(params, "route")
     start = _parse_date(_require(params, "date"))
     budget = _parse_budget(_require(params, "budget"))
-    try:
-        days_n = int(params.get("days", 14))
-    except (TypeError, ValueError) as exc:
-        raise BadRequest(f"invalid days: {params.get('days')!r}") from exc
-    if not 1 <= days_n <= 31:
-        raise BadRequest("days must be between 1 and 31")
+    days_n = _parse_days(params, default=14)
 
     try:
         route = data.get_route(route_code, data_dir)
@@ -398,6 +579,9 @@ def get_onepager(params: dict[str, Any], data_dir=None) -> tuple[int, str, str]:
     for i in range(days_n):
         d = start + timedelta(days=i)
         holiday = data.is_holiday(route.destination_country, d)
+        # No reference_date here: in the calendar view every day is an equally
+        # far-out departure date the user is comparing, so booking lead time does
+        # not apply. Day-to-day variation comes from weekday and event proximity.
         pr = price_for(route, d, holiday=holiday, events=events, rules=rules)
         priced.append(
             PricedDay(
@@ -469,15 +653,20 @@ def lambda_simulate(event, context=None):  # noqa: ANN001
     return _run(get_simulate, event)
 
 
-def lambda_onepager(event, context=None):  # noqa: ANN001
+def lambda_optimize(event, context=None):  # noqa: ANN001
+    return _run(get_optimize, event)
+
+
+def _run_text(handler, event: dict[str, Any]) -> dict[str, Any]:
+    """Adapter for handlers returning (status, text_body, content_type)."""
     params = event.get("queryStringParameters") or {}
     try:
-        status, svg, content_type = get_onepager(params)
+        status, body, content_type = handler(params)
         headers = {
             "Content-Type": content_type,
             "Access-Control-Allow-Origin": "*",
         }
-        return {"statusCode": status, "headers": headers, "body": svg}
+        return {"statusCode": status, "headers": headers, "body": body}
     except BadRequest as exc:
         return {
             "statusCode": 400,
@@ -487,3 +676,11 @@ def lambda_onepager(event, context=None):  # noqa: ANN001
             },
             "body": json.dumps({"error": str(exc)}),
         }
+
+
+def lambda_onepager(event, context=None):  # noqa: ANN001
+    return _run_text(get_onepager, event)
+
+
+def lambda_report(event, context=None):  # noqa: ANN001
+    return _run_text(get_report, event)

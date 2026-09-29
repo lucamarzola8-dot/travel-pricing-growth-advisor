@@ -8,7 +8,9 @@
     "destination_country": "ES",
     "base_fare": "120.00",
     "floor": "69.00",
-    "ceiling": "320.00"
+    "ceiling": "320.00",
+    "seats": 189,
+    "segment": "leisure"
   },
   {
     "code": "MXP-CDG",
@@ -19,7 +21,9 @@
     "destination_country": "FR",
     "base_fare": "140.00",
     "floor": "79.00",
-    "ceiling": "360.00"
+    "ceiling": "360.00",
+    "seats": 180,
+    "segment": "business"
   },
   {
     "code": "MXP-BER",
@@ -30,7 +34,9 @@
     "destination_country": "DE",
     "base_fare": "150.00",
     "floor": "85.00",
-    "ceiling": "380.00"
+    "ceiling": "380.00",
+    "seats": 180,
+    "segment": "business"
   },
   {
     "code": "MXP-AMS",
@@ -41,7 +47,9 @@
     "destination_country": "NL",
     "base_fare": "135.00",
     "floor": "80.00",
-    "ceiling": "350.00"
+    "ceiling": "350.00",
+    "seats": 180,
+    "segment": "business"
   },
   {
     "code": "MXP-LHR",
@@ -52,7 +60,9 @@
     "destination_country": "GB",
     "base_fare": "160.00",
     "floor": "95.00",
-    "ceiling": "420.00"
+    "ceiling": "420.00",
+    "seats": 186,
+    "segment": "business"
   },
   {
     "code": "MXP-FCO",
@@ -63,7 +73,9 @@
     "destination_country": "IT",
     "base_fare": "90.00",
     "floor": "49.00",
-    "ceiling": "240.00"
+    "ceiling": "240.00",
+    "seats": 189,
+    "segment": "leisure"
   },
   {
     "code": "MXP-LIS",
@@ -74,7 +86,9 @@
     "destination_country": "PT",
     "base_fare": "155.00",
     "floor": "89.00",
-    "ceiling": "390.00"
+    "ceiling": "390.00",
+    "seats": 180,
+    "segment": "leisure"
   },
   {
     "code": "MXP-VIE",
@@ -85,7 +99,9 @@
     "destination_country": "AT",
     "base_fare": "130.00",
     "floor": "75.00",
-    "ceiling": "330.00"
+    "ceiling": "330.00",
+    "seats": 174,
+    "segment": "leisure"
   },
   {
     "code": "MXP-PRG",
@@ -96,7 +112,9 @@
     "destination_country": "CZ",
     "base_fare": "125.00",
     "floor": "72.00",
-    "ceiling": "320.00"
+    "ceiling": "320.00",
+    "seats": 174,
+    "segment": "leisure"
   },
   {
     "code": "MXP-ATH",
@@ -107,7 +125,9 @@
     "destination_country": "GR",
     "base_fare": "170.00",
     "floor": "99.00",
-    "ceiling": "430.00"
+    "ceiling": "430.00",
+    "seats": 186,
+    "segment": "leisure"
   },
   {
     "code": "MXP-DUB",
@@ -118,7 +138,9 @@
     "destination_country": "IE",
     "base_fare": "165.00",
     "floor": "95.00",
-    "ceiling": "410.00"
+    "ceiling": "410.00",
+    "seats": 180,
+    "segment": "leisure"
   },
   {
     "code": "MXP-MAD",
@@ -129,6 +151,8 @@
     "destination_country": "ES",
     "base_fare": "128.00",
     "floor": "74.00",
-    "ceiling": "340.00"
+    "ceiling": "340.00",
+    "seats": 189,
+    "segment": "leisure"
   }
 ]

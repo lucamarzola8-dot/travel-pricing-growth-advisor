@@ -24,6 +24,8 @@ def routes(draw) -> Route:
         base_fare=Decimal(base),
         floor=Decimal(floor),
         ceiling=Decimal(ceiling),
+        seats=draw(st.integers(min_value=50, max_value=300)),
+        segment=draw(st.sampled_from(["business", "leisure", "other"])),
     )
 
 
@@ -42,6 +44,7 @@ def events_near(draw, travel_date: date) -> Event:
 def pricing_rules(draw) -> PricingRules:
     """A valid arbitrary ruleset (non-negative boosts, sane multipliers)."""
     months = st.integers(min_value=1, max_value=12)
+    dow = st.floats(min_value=0.7, max_value=1.3, allow_nan=False, allow_infinity=False)
     return PricingRules(
         peak_months=frozenset(draw(st.sets(months, max_size=4))),
         peak_multiplier=draw(st.floats(min_value=1.0, max_value=2.0, allow_nan=False, allow_infinity=False)),
@@ -50,6 +53,17 @@ def pricing_rules(draw) -> PricingRules:
         shoulder_multiplier=draw(st.floats(min_value=0.8, max_value=1.2, allow_nan=False, allow_infinity=False)),
         holiday_boost=draw(st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)),
         proximity_days=draw(st.integers(min_value=0, max_value=7)),
+        dow_multipliers=tuple(draw(st.lists(dow, min_size=7, max_size=7))),
+        lead_time_boost=draw(st.floats(min_value=0.0, max_value=0.5, allow_nan=False, allow_infinity=False)),
+        lead_time_days=draw(st.integers(min_value=1, max_value=60)),
+        # Elasticity must stay > 1 for a finite markup; keep it in a sane band.
+        elasticity=draw(st.floats(min_value=1.05, max_value=3.0, allow_nan=False, allow_infinity=False)),
+        elasticity_by_segment=(
+            ("business", draw(st.floats(min_value=1.05, max_value=3.0, allow_nan=False, allow_infinity=False))),
+            ("leisure", draw(st.floats(min_value=1.05, max_value=3.0, allow_nan=False, allow_infinity=False))),
+        ),
+        base_demand_per_seat=draw(st.floats(min_value=0.1, max_value=4.0, allow_nan=False, allow_infinity=False)),
+        marginal_cost_ratio=draw(st.floats(min_value=0.0, max_value=0.9, allow_nan=False, allow_infinity=False)),
     )
 
 

@@ -1,7 +1,24 @@
+export type FactorKind =
+  | "seasonality"
+  | "day_of_week"
+  | "lead_time"
+  | "holiday"
+  | "event"
+  | "guardrail";
+
 export interface Factor {
-  kind: "seasonality" | "holiday" | "event";
+  kind: FactorKind;
   multiplier: number;
   reason: string;
+}
+
+/** One readable line of a price explanation: euros and % of base fare. */
+export interface BreakdownItem {
+  kind: FactorKind;
+  reason: string;
+  multiplier: number;
+  contributionEur: string;
+  contributionPct: number;
 }
 
 export interface PriceResponse {
@@ -10,6 +27,36 @@ export interface PriceResponse {
   base: string;
   deltaPct: number;
   factors: Factor[];
+  breakdown: BreakdownItem[];
+}
+
+/** Profit-optimal price for one route/day (from /optimize). */
+export interface OptimizeDay {
+  route: string;
+  date: string;
+  optimalPrice: string;
+  unconstrainedPrice: string;
+  capacityConstrained: boolean;
+  seats: number;
+  loadFactor: number;
+  expectedDemand: number;
+  expectedRevenue: string;
+  expectedProfit: string;
+  marginalCost: string;
+  recommended: string;
+  recommendedRevenue: string;
+  recommendedProfit: string;
+  upliftPct: number;
+  demandMultiplier: number;
+  elasticity: number;
+  segment: string;
+  factors: Factor[];
+  breakdown: BreakdownItem[];
+}
+
+export interface OptimizeRangeResponse {
+  route: string;
+  days: OptimizeDay[];
 }
 
 export interface MarketScore {
@@ -72,9 +119,18 @@ export interface GrowthResponse {
   totals?: GrowthTotals;
 }
 
+/** One advisor recommendation: what the numbers show, what to do, and why. */
+export interface AdvisorInsight {
+  kind: "peak" | "capacity" | "uplift" | "weekday" | "quiet" | string;
+  insight: string;
+  action: string;
+  evidence: string;
+}
+
 export interface StorylineResponse {
   route: string;
   storyline: string[];
+  advisor: AdvisorInsight[];
 }
 
 export interface RouteInfo {
@@ -91,11 +147,15 @@ export interface RoutesResponse {
   routes: RouteInfo[];
 }
 
-/** A single day on the pricing calendar. */
+/** A single day on the pricing calendar, carrying both price views. */
 export interface PricedDay {
   date: string;
+  /** Rule-based recommended fare. */
   price: number;
   base: number;
   deltaPct: number;
   factors: Factor[];
+  breakdown: BreakdownItem[];
+  /** Profit-optimal view for the same day (present once /optimize is loaded). */
+  optimal?: OptimizeDay;
 }

@@ -1,5 +1,7 @@
 import type {
   GrowthResponse,
+  OptimizeDay,
+  OptimizeRangeResponse,
   PriceResponse,
   PricedDay,
   RoutesResponse,
@@ -82,38 +84,78 @@ export function fetchGrowth(
 export function fetchStoryline(
   route: string,
   date: string,
-  budget: number
+  budget: number,
+  days = 14
 ): Promise<StorylineResponse> {
-  return getJson<StorylineResponse>(
-    `/storyline?route=${encodeURIComponent(route)}&date=${encodeURIComponent(
-      date
-    )}&budget=${encodeURIComponent(budget)}`
-  );
+  const q = new URLSearchParams({
+    route,
+    date,
+    budget: String(budget),
+    days: String(days),
+  });
+  return getJson<StorylineResponse>(`/storyline?${q.toString()}`);
 }
 
-/** Fetch prices for a range of days (inclusive) for the pricing calendar. */
+/** URL of the consulting-style Markdown report for the current selection. */
+export function reportUrl(
+  route: string,
+  date: string,
+  days: number,
+  budget: number
+): string {
+  const q = new URLSearchParams({
+    route,
+    date,
+    days: String(days),
+    budget: String(budget),
+  });
+  return `${BASE}/report?${q.toString()}`;
+}
+
+/** Profit-optimal prices for `days` consecutive days in one round trip. */
+export function fetchOptimizeRange(
+  route: string,
+  start: string,
+  days: number
+): Promise<OptimizeRangeResponse> {
+  const q = new URLSearchParams({ route, date: start, days: String(days) });
+  return getJson<OptimizeRangeResponse>(`/optimize?${q.toString()}`);
+}
+
+/** Profit-optimal price for a single route/day (used by scenario compare). */
+export function fetchOptimizeDay(route: string, date: string): Promise<OptimizeDay> {
+  const q = new URLSearchParams({ route, date });
+  return getJson<OptimizeDay>(`/optimize?${q.toString()}`);
+}
+
+/** Turn one /optimize entry into a calendar day carrying both price views. */
+export function toPricedDay(o: OptimizeDay, base: number): PricedDay {
+  const price = Number(o.recommended);
+  return {
+    date: o.date,
+    price,
+    base,
+    deltaPct: base ? ((price - base) / base) * 100 : 0,
+    factors: o.factors,
+    breakdown: o.breakdown,
+    optimal: o,
+  };
+}
+
+/**
+ * Fetch the pricing calendar for a range of days. A single /optimize call
+ * returns, per day, the rule-based fare, its EUR/% breakdown and the
+ * profit-optimal price, so the calendar needs one request instead of N.
+ */
 export async function fetchPriceRange(
   route: string,
   start: string,
   days: number
 ): Promise<PricedDay[]> {
-  const dates: string[] = [];
-  const d = new Date(start + "T00:00:00Z");
-  for (let i = 0; i < days; i++) {
-    dates.push(d.toISOString().slice(0, 10));
-    d.setUTCDate(d.getUTCDate() + 1);
-  }
-  const results = await Promise.all(
-    dates.map(async (date) => {
-      const p = await fetchPrice(route, date);
-      return {
-        date,
-        price: Number(p.price),
-        base: Number(p.base),
-        deltaPct: p.deltaPct,
-        factors: p.factors,
-      } satisfies PricedDay;
-    })
-  );
-  return results;
+  const [range, first] = await Promise.all([
+    fetchOptimizeRange(route, start, days),
+    fetchPrice(route, start), // one call to learn the base fare
+  ]);
+  const base = Number(first.base);
+  return range.days.map((o) => toPricedDay(o, base));
 }

@@ -140,6 +140,64 @@ def test_get_storyline_valid():
     )
     assert status == 200
     assert isinstance(body["storyline"], list) and body["storyline"]
+    # Advisor: insight/action/evidence triples, always at least one.
+    assert isinstance(body["advisor"], list) and body["advisor"]
+    for item in body["advisor"]:
+        assert set(item) == {"kind", "insight", "action", "evidence"}
+        assert item["insight"] and item["action"] and item["evidence"]
+
+
+# --------------------------- optimize -------------------------------------- #
+
+def test_get_optimize_single_day():
+    status, body = api.get_optimize({"route": "MXP-BCN", "date": "2026-10-09"})
+    assert status == 200
+    assert body["route"] == "MXP-BCN" and body["date"] == "2026-10-09"
+    for key in ("optimalPrice", "unconstrainedPrice", "capacityConstrained", "seats",
+                "loadFactor", "expectedProfit", "recommended", "upliftPct", "breakdown"):
+        assert key in body
+    assert 0.0 <= body["loadFactor"] <= 1.0
+
+
+def test_get_optimize_range():
+    status, body = api.get_optimize({"route": "MXP-BCN", "date": "2026-10-09", "days": "5"})
+    assert status == 200
+    assert len(body["days"]) == 5
+    assert [d["date"] for d in body["days"]][0] == "2026-10-09"
+
+
+def test_get_optimize_bad_days():
+    with pytest.raises(api.BadRequest):
+        api.get_optimize({"route": "MXP-BCN", "date": "2026-10-09", "days": "0"})
+    with pytest.raises(api.BadRequest):
+        api.get_optimize({"route": "MXP-BCN", "date": "2026-10-09", "days": "x"})
+
+
+def test_get_price_has_breakdown_summing_to_price():
+    from decimal import Decimal
+
+    status, body = api.get_price({"route": "MXP-BCN", "date": "2026-10-09"})
+    assert status == 200
+    total = Decimal(body["base"]) + sum(Decimal(b["contributionEur"]) for b in body["breakdown"])
+    assert total == Decimal(body["price"])
+
+
+# --------------------------- report -------------------------------------- #
+
+def test_get_report_markdown():
+    status, md, ct = api.get_report(
+        {"route": "MXP-BCN", "date": "2026-10-06", "days": "7", "budget": "50000"}
+    )
+    assert status == 200
+    assert ct.startswith("text/markdown")
+    assert md.startswith("# Pricing & Growth Recommendation")
+    assert "## Recommendations" in md
+    assert md.count("| 2026-10-") == 7
+
+
+def test_get_report_unknown_route():
+    with pytest.raises(api.BadRequest):
+        api.get_report({"route": "ZZZ-ZZZ", "date": "2026-10-06", "days": "7", "budget": "1"})
 
 
 # --------------------------- lambda adapters ----------------------------- #

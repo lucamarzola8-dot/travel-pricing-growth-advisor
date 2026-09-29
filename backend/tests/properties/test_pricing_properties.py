@@ -48,11 +48,25 @@ def test_p3_event_never_lowers(data, route, travel_date, rules):
     assert with_ev.price >= without.price
 
 
-# P4 (req 2.6): with no holiday and no events, the only factor is seasonality.
+# P4 (req 2.6): with no holiday, no events, and no booking reference date, the only
+# factors are the always-present time factors seasonality and day-of-week (in order).
 @given(route=routes(), travel_date=travel_dates)
-def test_p4_no_signals_only_seasonality(route, travel_date):
+def test_p4_no_signals_only_time_factors(route, travel_date):
     result = price_for(route, travel_date, holiday=False, events=[])
-    assert [f.kind for f in result.factors] == ["seasonality"]
+    assert [f.kind for f in result.factors] == ["seasonality", "day_of_week"]
+
+
+# P6: adding a booking reference date never lowers the price (lead-time is >= 1).
+@given(route=routes(), travel_date=travel_dates, rules=pricing_rules())
+def test_p6_lead_time_never_lowers(route, travel_date, rules):
+    from dataclasses import replace
+
+    unclamped = replace(route, ceiling=Decimal("1000000000"), floor=Decimal("0"))
+    without = price_for(unclamped, travel_date, holiday=False, rules=rules)
+    with_ref = price_for(
+        unclamped, travel_date, holiday=False, rules=rules, reference_date=travel_date
+    )
+    assert with_ref.price >= without.price
 
 
 # P5 (req 2.7): equal inputs yield equal results (determinism).

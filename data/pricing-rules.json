@@ -1,5 +1,5 @@
 {
-  "description": "Tunable pricing rules for the dynamic pricing engine. Change pricing behaviour by editing data here, not by changing code. All multipliers for holiday/event are applied as (1 + boost) and are >= 1 so they never lower the pre-clamp price.",
+  "description": "Tunable pricing rules for the dynamic pricing engine. Change pricing behaviour by editing data here, not by changing code. day_of_week_multipliers is indexed Mon..Sun (7 values) and gives every weekday a different price (weekend departures higher). lead_time applies an advance-purchase premium: up to +boost for a same-day departure, decaying to 0 at 'days' out. holiday/event multipliers are applied as (1 + boost) and are >= 1 so they never lower the pre-clamp price. elasticity is the default price elasticity of demand for the profit optimiser (a +10% price change moves demand by roughly -elasticity*10%; must be > 1). elasticity_by_segment overrides it per route segment: business travellers are less price-sensitive (lower value) than leisure ones. base_demand_per_seat is the demand at the base fare on an ordinary day as a multiple of the route's seats (>1 means the base fare alone would overfill the aircraft). marginal_cost_ratio is the cost to serve one seat as a fraction of the base fare (0..1). The optimiser maximises profit (price - cost) * min(demand, seats): the unconstrained optimum is the markup cost * e/(e-1); when demand at that price exceeds the seats, price rises to the market-clearing level - peak pricing emerges from capacity, not from a rule. campaign_lead_days is how many days before a demand peak ad campaigns should be live; the advisor uses it to date its recommended actions.",
   "seasonality": {
     "peak_months": [6, 7, 8, 12],
     "peak_multiplier": 1.20,
@@ -7,6 +7,19 @@
     "low_multiplier": 0.90,
     "shoulder_multiplier": 1.00
   },
+  "day_of_week_multipliers": [0.96, 0.94, 0.94, 1.0, 1.08, 1.03, 1.08],
+  "lead_time": {
+    "boost": 0.12,
+    "days": 21
+  },
   "holiday_boost": 0.10,
-  "proximity_days": 3
+  "proximity_days": 3,
+  "elasticity": 1.3,
+  "elasticity_by_segment": {
+    "business": 1.30,
+    "leisure": 1.45
+  },
+  "base_demand_per_seat": 1.1,
+  "marginal_cost_ratio": 0.30,
+  "campaign_lead_days": 21
 }

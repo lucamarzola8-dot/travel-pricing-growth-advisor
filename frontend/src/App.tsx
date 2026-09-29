@@ -5,9 +5,11 @@ import {
   fetchRoutes,
   fetchStoryline,
   onePagerUrl,
+  reportUrl,
 } from "./api";
-import type { GrowthResponse, PricedDay, RouteInfo } from "./types";
-import { PricingCalendar } from "./components/PricingCalendar";
+import type { AdvisorInsight, GrowthResponse, PricedDay, RouteInfo } from "./types";
+import { PricingCalendar, type PriceView } from "./components/PricingCalendar";
+import { ScenarioCompare } from "./components/ScenarioCompare";
 import { GrowthBoard } from "./components/GrowthBoard";
 import { Storyline } from "./components/Storyline";
 import { WhatIf } from "./components/WhatIf";
@@ -39,10 +41,12 @@ export function App() {
   const [days, setDays] = useState(14);
   const [budget, setBudget] = useState(100000);
   const [tab, setTab] = useState<Tab>("pricing");
+  const [view, setView] = useState<PriceView>("rules");
 
   const [priced, setPriced] = useState<PricedDay[]>([]);
   const [growth, setGrowth] = useState<GrowthResponse | null>(null);
   const [storyline, setStoryline] = useState<string[]>([]);
+  const [advisor, setAdvisor] = useState<AdvisorInsight[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,11 +71,12 @@ export function App() {
       const [range, g, s] = await Promise.all([
         fetchPriceRange(route, start, days),
         fetchGrowth(budget, { route, date: start, days }),
-        fetchStoryline(route, start, budget),
+        fetchStoryline(route, start, budget, days),
       ]);
       setPriced(range);
       setGrowth(g);
       setStoryline(s.storyline);
+      setAdvisor(s.advisor ?? []);
     } catch (e) {
       setError(e instanceof Error ? e.message : "request failed");
     } finally {
@@ -155,6 +160,14 @@ export function App() {
         >
           Open one-pager
         </a>
+        <a
+          className="secondary"
+          href={reportUrl(route, start, days, budget)}
+          download
+          title="Download the consulting-style recommendation as Markdown"
+        >
+          Download report (.md)
+        </a>
       </section>
 
       {error && <div className="error">Error: {error}</div>}
@@ -164,10 +177,28 @@ export function App() {
           <section className="panel wide">
             <h2>Pricing calendar — {route}</h2>
             <p className="muted">
-              Recommended fare per day for this route. Hover a day to see the
-              factors (seasonality, holiday, event) behind its price.
+              Two views of the same days. <strong>Rule-based fare</strong>: base fare
+              adjusted by season, weekday, holidays and nearby events — click a day for
+              its € / % breakdown. <strong>Profit-optimal price</strong>: the price that
+              maximises expected profit given demand elasticity and the seats on the
+              aircraft; days marked <span className="cap-badge">seats</span> are priced
+              by capacity (peak pricing).
             </p>
-            <PricingCalendar days={priced} />
+            <PricingCalendar days={priced} view={view} onViewChange={setView} />
+          </section>
+
+          <section className="panel wide">
+            <h2>Advisor: what the numbers say, and what to do</h2>
+            <p className="muted">
+              Each recommendation is derived from the period's optimisation and the
+              planning rules; the evidence line shows the figures behind it.
+            </p>
+            <Storyline lines={[]} advisor={advisor} />
+          </section>
+
+          <section className="panel wide">
+            <h2>Scenario compare</h2>
+            <ScenarioCompare routes={routes} baseRoute={route} baseDate={start} />
           </section>
         </div>
       ) : (
@@ -193,9 +224,10 @@ export function App() {
       )}
 
       <footer className="muted">
-        Flight Pricing tab = revenue management for one route. Ads Growth
-        Allocation tab = where to spend the Google Ads budget across markets.
-        Offline seed data + public holidays; figures are illustrative.
+        Flight Pricing tab = revenue management for one route (rule-based fare and
+        profit-optimal price under seat capacity). Ads Growth Allocation tab = where
+        to spend the Google Ads budget across markets. Offline seed data + public
+        holidays; all figures are illustrative and deterministic.
       </footer>
     </div>
   );

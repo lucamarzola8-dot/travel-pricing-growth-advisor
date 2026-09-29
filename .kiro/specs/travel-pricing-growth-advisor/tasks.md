@@ -41,7 +41,38 @@ Built in functioning layers: each phase leaves the project runnable and testable
   - [x] 7.4 Power: package skill + MCP as `travel-growth-toolkit` — _Bonus 2_
   - [x] 7.5 Kiro Powers usage documented (Lesson 5); cloud session optional (Bonus 1)
 
-- [ ] 8. Presentation polish
-  - [ ] 8.1 Architecture diagram + screenshots in README
-  - [ ] 8.2 Final pass: all tests green, `cdk synth` clean, storyline demo-ready
-  - [ ] 8.3 Frontend visual polish and richer datasets (post-credits improvement)
+- [x] 8. Presentation polish
+  - [x] 8.1 Architecture diagram + screenshots in README
+  - [x] 8.2 Final pass: all tests green, `cdk synth` clean, storyline demo-ready
+  - [x] 8.3 Richer datasets (12 routes, 41 events Oct 2026 – mid 2027, per-market ads data)
+
+- [ ] 9. Pricing engine v2 — day-to-day differentiation — _Req 2.5, 2.6, 2.8–2.10_
+  - [x] 9.1 Day-of-week multipliers (data-driven) so quiet weeks are not flat
+  - [x] 9.2 Event proximity gradient (impact fades with distance) instead of an on/off step
+  - [x] 9.3 Optional lead-time (advance-purchase) curve kept as a pure capability, not used by
+        the calendar (the user compares departure dates, not booking horizons)
+  - [x] 9.4 `price_breakdown`: EUR / % contribution per factor + guardrail line; B1 invariant
+  - [x] 9.5 Property P4 revised to `[seasonality, day_of_week]`; P6 added
+
+- [ ] 10. Profit optimiser — elasticity + capacity — _Req 2b.1–2b.7, 5.4–5.5_
+  - [x] 10.1 `Route.seats` / `Route.segment` in `routes.json`; `elasticity_by_segment`,
+        `base_demand_per_seat`, `marginal_cost_ratio` in `pricing-rules.json`
+  - [x] 10.2 `demand.py`: constant-elasticity demand, markup `c·e/(e−1)`, market-clearing
+        price, profit `(p−c)·min(demand, seats)`, deterministic grid + analytical candidates
+  - [x] 10.3 `/optimize` endpoint (single day and `days=N` range), 400 on bad `days`
+  - [x] 10.4 Properties D1–D5, C1–C3, E1 + example tests (markup vs clearing, segments)
+  - [x] 10.5 Calibrate defaults so leisure routes are capacity-bound and business routes sit
+        at the markup (two explainable regimes)
+  - [x] 10.6 Spec (requirements/design) aligned with the real model
+
+- [x] 11. Dashboard v2 — explainability for a business stakeholder — _Req 6.5–6.7_
+  - [x] 11.1 Calendar toggle: rule-based vs profit-optimal price; capacity-bound badge; load
+        factor and uplift (one `/optimize?days=N` call feeds the whole calendar)
+  - [x] 11.2 Breakdown ledger (EUR / %) for the selected day
+  - [x] 11.3 Scenario compare: second route or date side by side with "why it differs"
+
+- [x] 12. Advisor narrative — _Req 4.1–4.3_
+  - [x] 12.1 `advisor_insights`: insight + action + evidence (peak → campaign date from
+        `campaign_lead_days`; capacity-bound days; period profit uplift; weekday pattern;
+        quiet window). A peak needs a real event/holiday driver, never just a busy Friday.
+  - [x] 12.2 `/report` Markdown one-pager export (consulting-style), download link in UI

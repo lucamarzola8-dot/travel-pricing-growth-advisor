@@ -26,10 +26,11 @@ def make_route(base="100.00", floor="50.00", ceiling="300.00") -> Route:
 
 def test_base_price_no_holiday_no_event_shoulder_season():
     route = make_route()
-    # April -> shoulder season, multiplier 1.0
-    result = price_for(route, date(2026, 4, 15), holiday=False, events=[])
+    # 2026-04-16 is a Thursday -> shoulder season (1.0) and neutral weekday (1.0),
+    # and no reference_date so no lead-time factor: price stays at base.
+    result = price_for(route, date(2026, 4, 16), holiday=False, events=[])
     assert result.price == Decimal("100.00")
-    assert [f.kind for f in result.factors] == ["seasonality"]
+    assert [f.kind for f in result.factors] == ["seasonality", "day_of_week"]
 
 
 def test_holiday_raises_price():
@@ -52,7 +53,8 @@ def test_event_within_window_raises_price():
 def test_event_outside_window_ignored():
     route = make_route()
     far_event = Event("XXX", date(2026, 5, 1), "Far Event", 0.30)
-    result = price_for(route, date(2026, 4, 15), holiday=False, events=[far_event])
+    # 2026-04-16 (Thursday): neutral weekday + shoulder season, event out of window.
+    result = price_for(route, date(2026, 4, 16), holiday=False, events=[far_event])
     assert result.price == Decimal("100.00")
     assert all(f.kind != "event" for f in result.factors)
 
@@ -77,6 +79,84 @@ def test_seasonality_bounds():
     assert seasonality_multiplier(date(2026, 4, 1)) == 1.00  # shoulder
 
 
+def test_day_of_week_differentiates_prices():
+    """Different weekdays in the same quiet period yield different prices."""
+    route = make_route()
+    # A run of consecutive shoulder-season days with no holiday/event should NOT
+    # all collapse to the same price now that day-of-week applies.
+    prices = {
+        d: price_for(route, date(2026, 4, d), holiday=False, events=[]).price
+        for d in range(13, 20)  # Mon 13 .. Sun 19 April 2026
+    }
+    assert len(set(prices.values())) > 1  # visibly differentiated across the week
+    # Friday (higher-demand) prices above Tuesday (lower-demand).
+    assert prices[17] > prices[14]  # Fri 17 vs Tue 14
+    assert all(f.kind == "day_of_week" for r in [
+        price_for(route, date(2026, 4, 17), holiday=False)
+    ] for f in r.factors if f.kind == "day_of_week")
+
+
+def test_day_of_week_multiplier_matches_weekday():
+    from travel_advisor.pricing import day_of_week_multiplier
+
+    # Default dow_multipliers = (Mon..Sun). 2026-04-13 is a Monday.
+    assert day_of_week_multiplier(date(2026, 4, 13)) == 0.96  # Monday
+    assert day_of_week_multiplier(date(2026, 4, 17)) == 1.08  # Friday
+    assert day_of_week_multiplier(date(2026, 4, 16)) == 1.00  # Thursday (neutral)
+
+
+def test_lead_time_raises_near_term_departures():
+    """With a reference date, a soon departure costs more than a far one."""
+    route = make_route(ceiling="10000.00")
+    ref = date(2026, 4, 16)  # Thursday, shoulder
+    soon = price_for(route, date(2026, 4, 16), holiday=False, reference_date=ref)
+    # 40 days out is beyond the 21-day window -> no lead-time premium.
+    far = price_for(route, date(2026, 5, 26), holiday=False, reference_date=ref)
+    assert any(f.kind == "lead_time" for f in soon.factors)
+    assert all(f.kind != "lead_time" for f in far.factors)
+
+
+def test_lead_time_skipped_without_reference_date():
+    """Omitting reference_date keeps the engine free of the lead-time factor."""
+    route = make_route()
+    result = price_for(route, date(2026, 4, 16), holiday=False)
+    assert all(f.kind != "lead_time" for f in result.factors)
+
+
+def test_event_impact_fades_with_distance():
+    """Event boost is strongest on the event day and weaker further away."""
+    route = make_route(ceiling="10000.00")
+    event = Event("XXX", date(2026, 4, 16), "Big Concert", 0.40)  # Thursday, dow 1.0
+
+    def event_mult(travel_day: int) -> float:
+        r = price_for(route, date(2026, 4, travel_day), holiday=False, events=[event])
+        evs = [f for f in r.factors if f.kind == "event"]
+        return evs[0].multiplier if evs else 1.0
+
+    on_day = event_mult(16)      # distance 0 -> full impact
+    one_off = event_mult(17)     # distance 1 -> partial
+    two_off = event_mult(18)     # distance 2 -> smaller
+    assert on_day > one_off > two_off > 1.0
+
+
+def test_event_proximity_weight_shape():
+    from travel_advisor.pricing import event_proximity_weight
+
+    # window = proximity_days + 1 = 4
+    assert event_proximity_weight(0, 3) == 1.0
+    assert event_proximity_weight(3, 3) == 0.25
+    assert event_proximity_weight(4, 3) == 0.0  # just outside the window
+    assert event_proximity_weight(10, 3) == 0.0
+
+
+def test_event_just_outside_window_ignored():
+    route = make_route(ceiling="10000.00")
+    # proximity_days default 3 -> window 4; distance 4 must carry no event factor.
+    event = Event("XXX", date(2026, 4, 20), "Far Fair", 0.30)
+    result = price_for(route, date(2026, 4, 16), holiday=False, events=[event])
+    assert all(f.kind != "event" for f in result.factors)
+
+
 def test_deterministic():
     route = make_route()
     event = Event("XXX", date(2026, 4, 16), "Fair", 0.2)
@@ -90,11 +170,12 @@ def test_rules_are_data_driven():
     from travel_advisor.models import PricingRules
 
     route = make_route()
-    # Default holiday boost is 0.10 -> 110.00; a custom 0.50 boost -> 150.00.
-    default = price_for(route, date(2026, 4, 15), holiday=True)
+    # 2026-04-16 is a Thursday: shoulder season (1.0) and neutral weekday (1.0), so
+    # only the holiday boost moves the price. Default 0.10 -> 110.00; 0.50 -> 150.00.
+    default = price_for(route, date(2026, 4, 16), holiday=True)
     custom = price_for(
         route,
-        date(2026, 4, 15),
+        date(2026, 4, 16),
         holiday=True,
         rules=PricingRules(holiday_boost=0.50),
     )
@@ -118,6 +199,22 @@ def test_load_pricing_rules_from_file():
     assert rules.holiday_boost == 0.10
     assert rules.proximity_days == 3
     assert 6 in rules.peak_months
+    # New day-of-week / lead-time factors are loaded from data too.
+    assert len(rules.dow_multipliers) == 7
+    assert rules.lead_time_days == 21
+    assert rules.lead_time_boost == 0.12
+    # Demand-model parameters (elasticity per segment, capacity scale, cost).
+    assert rules.elasticity_for("business") == 1.30
+    assert rules.elasticity_for("leisure") == 1.45
+    assert rules.base_demand_per_seat == 1.1
+    assert rules.marginal_cost_ratio == 0.30
+
+
+def test_load_routes_carries_seats_and_segment():
+    routes = load_routes()
+    assert routes["MXP-LHR"].segment == "business"
+    assert routes["MXP-BCN"].segment == "leisure"
+    assert all(r.seats >= 100 for r in routes.values())
 
 
 def test_load_routes_and_get_route():

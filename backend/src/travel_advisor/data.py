@@ -49,6 +49,8 @@ def load_routes(data_dir: str | Path | None = None) -> dict[str, Route]:
                 ceiling=Decimal(str(rec["ceiling"])),
                 origin_city=rec.get("origin_city", ""),
                 destination_city=rec.get("destination_city", ""),
+                seats=int(rec.get("seats", 180)),
+                segment=str(rec.get("segment", "leisure")),
             )
         except (KeyError, ValueError, InvalidOperation, TypeError):
             # Skip malformed route records; keep loading the rest.
@@ -195,6 +197,10 @@ def load_pricing_rules(data_dir: str | Path | None = None) -> PricingRules:
         return PricingRules()
     try:
         season = raw.get("seasonality", {})
+        defaults = PricingRules()
+        dow_raw = raw.get("day_of_week_multipliers", list(defaults.dow_multipliers))
+        dow = tuple(float(x) for x in dow_raw)
+        lead = raw.get("lead_time", {})
         return PricingRules(
             peak_months=frozenset(int(m) for m in season.get("peak_months", [6, 7, 8, 12])),
             peak_multiplier=float(season.get("peak_multiplier", 1.20)),
@@ -203,6 +209,25 @@ def load_pricing_rules(data_dir: str | Path | None = None) -> PricingRules:
             shoulder_multiplier=float(season.get("shoulder_multiplier", 1.00)),
             holiday_boost=float(raw.get("holiday_boost", 0.10)),
             proximity_days=int(raw.get("proximity_days", 3)),
+            dow_multipliers=dow,
+            lead_time_boost=float(lead.get("boost", defaults.lead_time_boost)),
+            lead_time_days=int(lead.get("days", defaults.lead_time_days)),
+            elasticity=float(raw.get("elasticity", defaults.elasticity)),
+            elasticity_by_segment=tuple(
+                (str(k), float(v))
+                for k, v in raw.get(
+                    "elasticity_by_segment", dict(defaults.elasticity_by_segment)
+                ).items()
+            ),
+            base_demand_per_seat=float(
+                raw.get("base_demand_per_seat", defaults.base_demand_per_seat)
+            ),
+            marginal_cost_ratio=float(
+                raw.get("marginal_cost_ratio", defaults.marginal_cost_ratio)
+            ),
+            campaign_lead_days=int(
+                raw.get("campaign_lead_days", defaults.campaign_lead_days)
+            ),
         )
     except (KeyError, ValueError, TypeError):
         return PricingRules()

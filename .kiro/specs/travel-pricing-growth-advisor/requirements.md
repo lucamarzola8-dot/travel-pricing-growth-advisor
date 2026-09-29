@@ -31,11 +31,48 @@ route/date/market so that I can justify it to stakeholders.
 - 2.4 WHEN there is a national holiday in the destination market on the travel date THE
   SYSTEM SHALL apply a non-decreasing adjustment to the price and record a "holiday" factor.
 - 2.5 WHEN a relevant event occurs within the configured proximity window of the travel date
-  THE SYSTEM SHALL apply a non-decreasing adjustment and record an "event" factor.
+  THE SYSTEM SHALL apply a non-decreasing adjustment that is strongest on the event day and
+  fades with distance to zero at the edge of the window, and record an "event" factor.
 - 2.6 IF no holidays or events apply THE SYSTEM SHALL return the base fare adjusted only by
-  seasonality, and the factor list SHALL contain only the seasonality factor.
+  the always-present time factors (seasonality and day of week), and the factor list SHALL
+  contain exactly those two factors in that order.
 - 2.7 WHEN the same inputs are provided again THE SYSTEM SHALL return an identical result
   (determinism).
+- 2.8 WHEN a price is computed THE SYSTEM SHALL apply a day-of-week multiplier from the
+  pricing rules so that consecutive days in the same season carry different prices
+  (weekend departures priced above mid-week ones).
+- 2.9 WHEN a price is returned THE SYSTEM SHALL also return a breakdown listing, for each
+  factor in order, its contribution in currency and as a percentage of the base fare, plus a
+  "guardrail" line when the floor/ceiling changed the price, such that base fare plus the
+  sum of contributions equals the final price exactly.
+- 2.10 THE SYSTEM SHALL read every pricing parameter (seasonality, day-of-week multipliers,
+  holiday boost, event proximity, elasticities, capacity scale, marginal cost) from
+  `pricing-rules.json`, falling back to documented defaults when the file is missing.
+
+## 2b. Profit-optimising price (elasticity + capacity)
+
+**User story:** As a revenue manager, I want the price that maximises expected profit given
+how price-sensitive my customers are and how many seats I actually have, so that pricing is
+an optimisation and not only a rule.
+
+- 2b.1 WHEN an optimal price is requested for a route and date THE SYSTEM SHALL model demand
+  as a constant-elasticity function of price, scaled by the same contextual factors used for
+  the rule-based price, and return the price in `[floor, ceiling]` that maximises expected
+  profit `(price − marginal cost) × min(demand, seats)`.
+- 2b.2 THE SYSTEM SHALL use the elasticity configured for the route's demand segment
+  (e.g. business vs leisure), falling back to a default elasticity.
+- 2b.3 THE SYSTEM SHALL never recommend an optimal price whose expected seats sold exceed the
+  route's seat capacity.
+- 2b.4 WHEN demand at the unconstrained markup price would exceed the seat capacity THE
+  SYSTEM SHALL raise the optimal price to the market-clearing level and flag the result as
+  capacity-constrained; capacity SHALL never lower the price below the markup price.
+- 2b.5 WHEN the route has more seats, all else equal, THE SYSTEM SHALL NOT return a higher
+  optimal price.
+- 2b.6 THE SYSTEM SHALL return, alongside the optimal price, the unconstrained markup price,
+  the rule-based recommended price, and the expected demand, revenue and profit of each, so
+  that the profit uplift of optimising is visible and explainable.
+- 2b.7 WHEN the same inputs are provided again THE SYSTEM SHALL return an identical optimal
+  price (determinism).
 
 ## 3. Growth opportunity advisor
 
@@ -74,6 +111,11 @@ and storyline data.
   error and a message identifying the problem.
 - 5.3 WHEN the client requests the growth board THE SYSTEM SHALL respond with ranked markets
   and their allocations as JSON.
+- 5.4 WHEN the client requests the optimal price for a route and date THE SYSTEM SHALL respond
+  with the profit-optimisation result as JSON; WHEN a `days` parameter (1–31) is supplied THE
+  SYSTEM SHALL respond with one result per day in a single response.
+- 5.5 IF `days` is outside 1–31 or not an integer THE SYSTEM SHALL respond with a 400-style
+  error identifying the problem.
 
 ## 6. Dashboard (frontend)
 
@@ -86,6 +128,13 @@ demand, opportunities, and the storyline.
   day's price.
 - 6.3 THE SYSTEM SHALL display markets ranked by opportunity with their suggested allocation.
 - 6.4 THE SYSTEM SHALL display the generated storyline.
+- 6.5 WHEN the analyst switches the calendar to "optimal price" THE SYSTEM SHALL display the
+  profit-optimal price per day, mark days where seat capacity forced the price up, and show
+  the expected load factor and profit uplift versus the rule-based price.
+- 6.6 WHEN the analyst selects a priced day THE SYSTEM SHALL display the currency/percentage
+  breakdown of that day's price in a form readable by a non-technical stakeholder.
+- 6.7 WHEN the analyst picks a second route or date to compare THE SYSTEM SHALL display both
+  scenarios side by side with price, profit and the factors that explain the difference.
 
 ## 7. Infrastructure
 

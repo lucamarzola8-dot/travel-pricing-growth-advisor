@@ -15,10 +15,13 @@ business language a decision-maker can act on.
 
 The platform combines two tools travel businesses need side by side:
 
-1. **Dynamic flight pricing** — recommends a fare per route and date that reacts to
-   **seasonality, national holidays, and public events** (trade fairs, concerts, sporting
-   events). Every price comes with the factors behind it, so a demand spike (e.g. Barcelona
-   during Mobile World Congress) is visible before it happens (the **Flight Pricing** tab).
+1. **Dynamic flight pricing** — two views of every route/date. A **rule-based fare** that
+   reacts to **seasonality, day of week, national holidays, and public events** (trade
+   fairs, concerts, sporting events), with a € / % breakdown a non-technical stakeholder can
+   read. And a **profit-optimal price**: the fare that maximises expected profit given how
+   price-sensitive the route's customers are (elasticity by business/leisure segment) and
+   **how many seats the aircraft has** — so on a high-demand day the price rises because the
+   plane would otherwise overfill, not because a rule says so (the **Flight Pricing** tab).
 2. **Google Ads allocation advisory** — recommends **where to spend a Google Ads budget**
    across markets, ranked by **return on ad spend** (see below). It answers the
    international-growth-consultant question: given a fixed ad budget, which destinations
@@ -91,7 +94,7 @@ demand, because its cost-per-click is the highest — the budget follows ROI, no
   growth-opportunity board with per-market allocations, the storyline, and a one-click
   one-pager.
 - **Pricing engine + growth advisor** (Python) — deterministic, explainable, fully tested
-  (48 tests including property-based tests). Every price and score carries the factors that
+  (121 tests including property-based tests). Every price and score carries the factors that
   produced it.
 - **AWS infrastructure as code** (CDK / TypeScript) — S3, Lambda, API Gateway, DynamoDB —
   validated with `cdk synth` (deploy optional, no credentials needed to validate).
@@ -108,8 +111,10 @@ demand, because its cost-per-click is the highest — the budget follows ROI, no
   and margin lift the score, a higher cost-per-click lowers it. A high-demand but expensive
   market (e.g. London) can rank below a cheaper, high-margin one (e.g. Lisbon): the budget
   follows ROI, not raw demand. Signals live in [`data/markets.json`](data/markets.json).
-- **Extensible by data, not code.** Pricing behaviour (seasonality bands, holiday boost,
-  event proximity) lives in [`data/pricing-rules.json`](data/pricing-rules.json). Advertising
+- **Extensible by data, not code.** Pricing behaviour (seasonality bands, weekday
+  multipliers, holiday boost, event proximity, elasticity per segment, seat-demand scale,
+  marginal cost, campaign lead time) lives in
+  [`data/pricing-rules.json`](data/pricing-rules.json). Advertising
   signals live in `data/markets.json`. A new destination is a row in
   [`data/routes.json`](data/routes.json) plus its events. Google Trends can optionally refresh
   the demand index via the bundled `fetch` MCP server (off by default; seed data stays the
@@ -119,12 +124,31 @@ demand, because its cost-per-click is the highest — the budget follows ROI, no
 
 ## How it works (and where the numbers come from)
 
-**Flight price.** Each route has a base fare in [`data/routes.json`](data/routes.json); the
-recommended price is `base × seasonality × holiday × event`, clamped to the route's
-`[floor, ceiling]`. The multipliers are transparent rules in
-[`data/pricing-rules.json`](data/pricing-rules.json). Base fares are realistic seed values
-for European short-haul, not a live carrier feed — in production the base fare comes from the
-customer's revenue-management system; the adjustment logic stays the same.
+**Rule-based fare.** Each route has a base fare in [`data/routes.json`](data/routes.json);
+the recommended price is `base × seasonality × day-of-week × holiday × event`, clamped to
+the route's `[floor, ceiling]`. Event impact is a gradient — strongest on the event day,
+fading to zero at the edge of the proximity window — so demand ramps toward a peak instead
+of switching on. Every fare ships with a **breakdown** (euros and % of base per factor,
+plus a guardrail line when the clamp acted) that sums exactly to the price. The multipliers
+are transparent rules in [`data/pricing-rules.json`](data/pricing-rules.json). Base fares are
+realistic seed values for European short-haul, not a live carrier feed — in production the
+base fare comes from the customer's revenue-management system; the logic stays the same.
+
+**Profit-optimal price.** The same contextual factors are read as *demand signals*: a
+holiday or nearby event means more people want to fly. Demand responds to price with
+constant elasticity `e` (per segment: business ≈ 1.30, leisure ≈ 1.45 — leisure travellers
+are more price-sensitive), and expected profit is `(price − marginal cost) × min(demand,
+seats)`. The unconstrained optimum is the revenue-management markup `cost × e/(e−1)`; when
+demand at that price would overfill the aircraft, the price rises to the level that just
+fills it. **Peak pricing therefore emerges from seat capacity**, not from a hand-tuned
+rule — and it shows up as a `seats` badge on the calendar. Leisure routes are typically
+capacity-bound (price set by seats, climbing on event days); business routes sit at the
+markup with seat headroom. Both regimes are explained in one sentence each.
+
+**Advisor.** The engine's numbers are turned into insight → action → evidence cards
+(demand peak → "campaigns live by *date*", where the lead time is a rule, not a guess;
+capacity-bound days → hold fare, move promo budget; period profit uplift; weekday
+pattern). The same content exports as a consulting-style Markdown report.
 
 **Ads ROI score.** For each market: `score = demand × (1 + margin) ÷ cpc`, where demand is a
 search-interest index (0–100), margin is booking profitability (0–1), and CPC is the
@@ -179,11 +203,13 @@ in `infra/` and are validated with `cdk synth` — no credentials or live deploy
 | Endpoint | Returns |
 |----------|---------|
 | `GET /routes` | available routes with city labels (`Milan → Barcelona (MXP-BCN)`) |
-| `GET /price?route=&date=` | recommended price + the ordered factors behind it |
+| `GET /price?route=&date=` | rule-based fare + ordered factors + € / % breakdown |
+| `GET /optimize?route=&date=[&days=N]` | profit-optimal price (elasticity + seat capacity): optimal vs markup vs rule-based, load factor, profit uplift; `days` returns the whole calendar in one call |
 | `GET /growth?budget=` | markets ranked by opportunity + budget allocation |
 | `GET /simulate?budget=&from=&to=&amount=` | what-if: move budget between markets, get the delta in bookings/revenue |
-| `GET /storyline?route=&date=&budget=` | business-language insights |
+| `GET /storyline?route=&date=&budget=[&days=]` | business-language insights + advisor cards (insight / action / evidence) |
 | `GET /onepager?route=&date=&days=&budget=` | deterministic SVG client briefing |
+| `GET /report?route=&date=&days=&budget=` | consulting-style Markdown recommendation (download) |
 
 ## Repository layout
 
@@ -226,7 +252,7 @@ Every Kiro University Challenge lesson is demonstrated in the repo. Full map in
 | Spec-driven development | [`.kiro/specs/`](.kiro/specs/) — EARS requirements, design, tasks |
 | Steering | [`.kiro/steering/`](.kiro/steering/) — product, tech, structure |
 | Hooks | [`.kiro/hooks/`](.kiro/hooks/) — tests on backend save, type-check on frontend save, `cdk synth` on infra save |
-| Property-based testing | [`backend/tests/properties/`](backend/tests/properties/) — pricing P1–P5, growth G1–G5 |
+| Property-based testing | [`backend/tests/properties/`](backend/tests/properties/) — pricing P1–P6 + breakdown B1, profit optimiser D1–D5, capacity C1–C3, elasticity E1, growth G1–G5 |
 | Powers | [`power/`](power/) — `travel-growth-toolkit` (usage in its README) |
 | MCP | [`.kiro/settings/mcp.json`](.kiro/settings/mcp.json) — optional `fetch` enrichment, off by default |
 | Custom agents | [`.kiro/agents/`](.kiro/agents/) — `travel-data-analyst`, `aws-infra-reviewer` |
@@ -234,6 +260,8 @@ Every Kiro University Challenge lesson is demonstrated in the repo. Full map in
 
 ## Status
 
-Core product complete and verified: 48 tests green, `cdk synth` clean, dashboard and
-one-pager working end-to-end. Optional next steps: live AWS deploy, a public demo, and
-further visual polish.
+Core product complete and verified: 121 tests green (unit + property-based), dashboard,
+one-pager and Markdown report working end-to-end. Pricing engine v2 adds weekday and
+event-gradient factors, a € / % breakdown, a capacity-constrained profit optimiser with
+per-segment elasticity, scenario comparison and an advisor narrative. Runs fully offline;
+the CDK stack is validated locally and never deployed from this repo.
